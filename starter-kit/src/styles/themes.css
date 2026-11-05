@@ -1,0 +1,148 @@
+/*
+ * Temas de color seleccionables por cada persona (ver src/lib/theme.ts).
+ * Cada bloque solo redefine los tokens de "marca" (fondo, texto, primario,
+ * secundario, borde) — los colores de estado (--destructive, --warning,
+ * --success) se mantienen iguales en todos los temas a propósito, para que
+ * una alerta roja o una advertencia amarilla siempre se reconozcan igual
+ * sin importar el tema elegido. "Clásico" (sin data-theme) es el tema por
+ * defecto de siempre y no necesita bloque propio.
+ */
+:root[data-theme="rosa"] {
+  --background: oklch(0.974 0.013 0);
+  --foreground: oklch(0.355 0.073 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.355 0.073 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.355 0.073 0);
+  --primary: oklch(0.668 0.176 3);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.941 0.028 355);
+  --secondary-foreground: oklch(0.532 0.158 3);
+  --muted: oklch(0.951 0.022 356);
+  --muted-foreground: oklch(0.601 0.052 359);
+  --accent: oklch(0.941 0.028 355);
+  --accent-foreground: oklch(0.532 0.158 3);
+  --border: oklch(0.899 0.042 357);
+  --input: oklch(0.899 0.042 357);
+  --ring: oklch(0.668 0.176 3);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.355 0.073 0);
+  --sidebar-primary: oklch(0.668 0.176 3);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.941 0.028 355);
+  --sidebar-accent-foreground: oklch(0.532 0.158 3);
+  --sidebar-border: oklch(0.899 0.042 357);
+  --sidebar-ring: oklch(0.668 0.176 3);
+}
+
+:root[data-theme="azul-marino"] {
+  --background: oklch(0.97 0.007 269);
+  --foreground: oklch(0.285 0.052 261);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.285 0.052 261);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.285 0.052 261);
+  --primary: oklch(0.353 0.093 259);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.942 0.015 264);
+  --secondary-foreground: oklch(0.353 0.093 259);
+  --muted: oklch(0.955 0.01 267);
+  --muted-foreground: oklch(0.536 0.045 261);
+  --accent: oklch(0.942 0.015 264);
+  --accent-foreground: oklch(0.353 0.093 259);
+  --border: oklch(0.909 0.019 266);
+  --input: oklch(0.909 0.019 266);
+  --ring: oklch(0.353 0.093 259);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.285 0.052 261);
+  --sidebar-primary: oklch(0.353 0.093 259);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.942 0.015 264);
+  --sidebar-accent-foreground: oklch(0.353 0.093 259);
+  --sidebar-border: oklch(0.909 0.019 266);
+  --sidebar-ring: oklch(0.353 0.093 259);
+}
+
+:root[data-theme="celeste"] {
+  --background: oklch(0.978 0.011 211);
+  --foreground: oklch(0.328 0.047 215);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.328 0.047 215);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.328 0.047 215);
+  --primary: oklch(0.678 0.111 217);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.954 0.021 212);
+  --secondary-foreground: oklch(0.532 0.088 215);
+  --muted: oklch(0.958 0.018 209);
+  --muted-foreground: oklch(0.598 0.049 210);
+  --accent: oklch(0.954 0.021 212);
+  --accent-foreground: oklch(0.532 0.088 215);
+  --border: oklch(0.915 0.035 210);
+  --input: oklch(0.915 0.035 210);
+  --ring: oklch(0.678 0.111 217);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.328 0.047 215);
+  --sidebar-primary: oklch(0.678 0.111 217);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.954 0.021 212);
+  --sidebar-accent-foreground: oklch(0.532 0.088 215);
+  --sidebar-border: oklch(0.915 0.035 210);
+  --sidebar-ring: oklch(0.678 0.111 217);
+}
+
+:root[data-theme="morado"] {
+  --background: oklch(0.976 0.008 301);
+  --foreground: oklch(0.334 0.068 297);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.334 0.068 297);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.334 0.068 297);
+  --primary: oklch(0.554 0.15 296);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0.027 305);
+  --secondary-foreground: oklch(0.438 0.148 296);
+  --muted: oklch(0.949 0.021 304);
+  --muted-foreground: oklch(0.597 0.063 300);
+  --accent: oklch(0.94 0.027 305);
+  --accent-foreground: oklch(0.438 0.148 296);
+  --border: oklch(0.902 0.039 302);
+  --input: oklch(0.902 0.039 302);
+  --ring: oklch(0.554 0.15 296);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.334 0.068 297);
+  --sidebar-primary: oklch(0.554 0.15 296);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.94 0.027 305);
+  --sidebar-accent-foreground: oklch(0.438 0.148 296);
+  --sidebar-border: oklch(0.902 0.039 302);
+  --sidebar-ring: oklch(0.554 0.15 296);
+}
+
+:root[data-theme="diente-feliz"] {
+  --background: oklch(0.99 0.009 78);
+  --foreground: oklch(0.366 0.025 50);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.366 0.025 50);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.366 0.025 50);
+  --primary: oklch(0.757 0.148 36);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.958 0.02 177);
+  --secondary-foreground: oklch(0.576 0.1 176);
+  --muted: oklch(0.963 0.017 68);
+  --muted-foreground: oklch(0.625 0.027 47);
+  --accent: oklch(0.958 0.02 177);
+  --accent-foreground: oklch(0.576 0.1 176);
+  --border: oklch(0.927 0.026 58);
+  --input: oklch(0.927 0.026 58);
+  --ring: oklch(0.757 0.148 36);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.366 0.025 50);
+  --sidebar-primary: oklch(0.757 0.148 36);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.958 0.02 177);
+  --sidebar-accent-foreground: oklch(0.576 0.1 176);
+  --sidebar-border: oklch(0.927 0.026 58);
+  --sidebar-ring: oklch(0.757 0.148 36);
+}
