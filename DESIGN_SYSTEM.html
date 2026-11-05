@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Diseño de DentiHub</title>
+<meta name="description" content="El sistema de diseño de DentiHub, explicado en una sola página." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+<style>
+  /* Los mismos tokens de starter-kit/src/styles.css (tema Clásico). */
+  :root {
+    color-scheme: light;
+    --background: oklch(0.985 0.005 230);
+    --foreground: oklch(0.24 0.03 245);
+    --card: oklch(1 0 0);
+    --primary: oklch(0.53 0.13 232);
+    --primary-foreground: oklch(0.99 0.005 230);
+    --secondary: oklch(0.95 0.012 230);
+    --muted: oklch(0.955 0.008 230);
+    --muted-foreground: oklch(0.52 0.025 245);
+    --accent: oklch(0.93 0.03 210);
+    --border: oklch(0.9 0.012 235);
+    --destructive: oklch(0.55 0.2 25);
+    --success: oklch(0.6 0.13 155);
+    --warning: oklch(0.75 0.14 75);
+    --warning-foreground: oklch(0.25 0.04 60);
+    --radius: 0.5rem;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  /* Barra superior: simple, sin transparencias */
+  header.top { position: sticky; top: 0; z-index: 10; background: var(--background); border-bottom: 1px solid var(--border); }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 52px; }
+  header.top strong { font-weight: 600; font-size: 15px; }
+  header.top nav { display: flex; gap: 22px; }
+  header.top a { color: var(--muted-foreground); text-decoration: none; font-size: 13px; }
+  header.top a:hover { color: var(--foreground); }
+
+  section { padding: 96px 0 0; }
+  .eyebrow { color: var(--primary); font-weight: 600; font-size: 14px; margin: 0 0 8px; }
+  h1 { font-size: clamp(40px, 7vw, 64px); line-height: 1.05; letter-spacing: -0.035em; font-weight: 600; margin: 0 0 20px; }
+  h2 { font-size: clamp(30px, 4.6vw, 44px); line-height: 1.1; letter-spacing: -0.03em; font-weight: 600; margin: 0 0 12px; }
+  .lead { font-size: clamp(17px, 2.2vw, 21px); color: var(--muted-foreground); max-width: 620px; margin: 0; }
+  .hero { padding-top: 88px; }
+  .head { margin-bottom: 40px; }
+
+  .grid { display: grid; gap: 16px; }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+  .card h3 { margin: 0 0 6px; font-size: 17px; font-weight: 600; }
+  .card p { margin: 0; color: var(--muted-foreground); font-size: 15px; }
+
+  /* Colores */
+  .sw { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .sw .chip { height: 84px; border-bottom: 1px solid var(--border); }
+  .sw .info { padding: 14px 16px 16px; }
+  .sw b { display: block; font-size: 15px; font-weight: 600; }
+  .sw span { display: block; font-size: 13px; color: var(--muted-foreground); }
+  .sw code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted-foreground); }
+  .group { font-size: 13px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.06em; margin: 36px 0 14px; }
+  .group:first-of-type { margin-top: 0; }
+
+  /* Tipografía */
+  .type { display: grid; grid-template-columns: 1fr; gap: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .type .row { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding: 18px 24px; border-top: 1px solid var(--border); }
+  .type .row:first-child { border-top: 0; }
+  .type .meta { color: var(--muted-foreground); font-size: 13px; white-space: nowrap; }
+  .aa { font-size: 96px; line-height: 1; font-weight: 600; letter-spacing: -0.04em; margin: 0 0 8px; }
+
+  /* Componentes de muestra */
+  .demo { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; }
+  .demo + .demo { margin-top: 16px; }
+  .label { font-size: 13px; font-weight: 600; color: var(--muted-foreground); margin: 0 0 14px; }
+  .row-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn { font: inherit; font-size: 14px; font-weight: 500; letter-spacing: inherit; height: 36px; padding: 0 16px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; }
+  .btn.pri { background: var(--primary); color: var(--primary-foreground); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+  .btn.out { background: var(--background); border-color: var(--border); }
+  .btn.sec { background: var(--secondary); }
+  .btn.gho { background: transparent; }
+  .btn.des { background: var(--destructive); color: var(--primary-foreground); }
+  .badge { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 6px; border: 1px solid; font-size: 12px; }
+  .b-neu { border-color: var(--border); background: var(--muted); color: var(--muted-foreground); }
+  .b-inf { border-color: color-mix(in oklch, var(--primary) 40%, transparent); background: color-mix(in oklch, var(--primary) 15%, transparent); color: var(--primary); }
+  .b-ok  { border-color: color-mix(in oklch, var(--success) 40%, transparent); background: color-mix(in oklch, var(--success) 15%, transparent); }
+  .b-warn { border-color: color-mix(in oklch, var(--warning) 40%, transparent); background: color-mix(in oklch, var(--warning) 15%, transparent); color: var(--warning-foreground); }
+  .b-bad { border-color: color-mix(in oklch, var(--destructive) 40%, transparent); background: color-mix(in oklch, var(--destructive) 15%, transparent); color: var(--destructive); }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.06); }
+  .kpi small { display: block; color: var(--muted-foreground); font-size: 14px; }
+  .kpi strong { display: block; font-size: 30px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi.alert strong { color: var(--destructive); }
+  .input { font: inherit; font-size: 14px; height: 36px; width: 100%; max-width: 320px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: transparent; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05); }
+  table { border-collapse: separate; border-spacing: 4px; width: 100%; font-size: 14px; }
+  th { height: 44px; padding: 0 12px; border-radius: 6px; background: color-mix(in oklch, var(--primary) 15%, transparent); font-size: 13px; font-weight: 500; color: color-mix(in oklch, var(--foreground) 80%, transparent); }
+  td { height: 44px; padding: 0 12px; border-radius: 6px; background: color-mix(in oklch, var(--primary) 5%, transparent); text-align: left; }
+
+  /* Forma */
+  .shape { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+  .shape div { text-align: center; font-size: 13px; color: var(--muted-foreground); }
+  .shape i { display: block; background: var(--secondary); border: 1px solid var(--border); margin: 0 auto 8px; }
+
+  /* Reglas */
+  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .rules ul { list-style: none; margin: 0; padding: 0; }
+  .rules li { padding: 10px 0; border-top: 1px solid var(--border); font-size: 15px; }
+  .rules li:first-child { border-top: 0; }
+  .rules h3 { margin: 0 0 8px; font-size: 17px; }
+  .yes h3 { color: var(--success); }
+  .no h3 { color: var(--destructive); }
+
+  footer { padding: 96px 0 64px; color: var(--muted-foreground); font-size: 13px; }
+  footer p { margin: 4px 0; }
+  @media (max-width: 640px) {
+    header.top nav { display: none; }
+    section { padding-top: 72px; }
+    .type .row { flex-direction: column; gap: 4px; }
+    .aa { font-size: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <strong>DentiHub</strong>
+    <nav>
+      <a href="#color">Color</a>
+      <a href="#texto">Texto</a>
+      <a href="#piezas">Piezas</a>
+      <a href="#forma">Forma</a>
+      <a href="#reglas">Reglas</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">Sistema de diseño</p>
+    <h1>Simple, claro<br />y sobrio.</h1>
+    <p class="lead">Una sola forma de hacer cada cosa. Mucho aire, un solo color de acento y datos primero. Esta página resume lo esencial; el detalle completo está en DESIGN_SYSTEM.md.</p>
+  </section>
+
+  <section>
+    <div class="grid g3">
+      <div class="card"><h3>Un solo acento</h3><p>El azul de marca es el único color que llama la atención. Todo lo demás es neutro.</p></div>
+      <div class="card"><h3>Estados que no cambian</h3><p>Rojo, ámbar y verde significan siempre lo mismo, en cualquier tema.</p></div>
+      <div class="card"><h3>Datos primero</h3><p>Cifras grandes, etiquetas pequeñas y nada decorativo que distraiga.</p></div>
+    </div>
+  </section>
+
+  <section id="color">
+    <div class="head">
+      <p class="eyebrow">Color</p>
+      <h2>Pocos colores, bien usados.</h2>
+      <p class="lead">Se usan siempre por su nombre, nunca con un código fijo. Los valores hexadecimales son aproximados; el oficial es oklch.</p>
+    </div>
+
+    <p class="group">Marca</p>
+    <div class="grid g4">
+      <div class="sw"><div class="chip" style="background:var(--primary)"></div><div class="info"><b>Azul de marca</b><span>Botón principal, enlaces, foco</span><code>primary · #0077A9</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--accent)"></div><div class="info"><b>Celeste suave</b><span>Hover de botones y filas</span><code>accent · #D2EEF3</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--secondary)"></div><div class="info"><b>Gris azulado</b><span>Fondos suaves, página activa</span><code>secondary · #E7F0F5</code></div></div>
+    </div>
+
+    <p class="group">Neutros</p>
+    <div class="grid g4">
+      <div class="sw"><div class="chip" style="background:var(--background)"></div><div class="info"><b>Fondo</b><span>Fondo de la app</span><code>background · #F7FBFD</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--card)"></div><div class="info"><b>Tarjeta</b><span>Tarjetas y ventanas</span><code>card · #FFFFFF</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--border)"></div><div class="info"><b>Borde</b><span>Líneas finas</span><code>border · #D7DFE5</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--muted-foreground)"></div><div class="info"><b>Texto suave</b><span>Etiquetas y apoyo</span><code>muted-foreground · #5D6B77</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--foreground)"></div><div class="info"><b>Texto</b><span>Texto principal</span><code>foreground · #13212D</code></div></div>
+    </div>
+
+    <p class="group">Estado</p>
+    <div class="grid g4">
+      <div class="sw"><div class="chip" style="background:var(--success)"></div><div class="info"><b>Correcto</b><span>Aprobado, recibido</span><code>success · #2C965D</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--warning)"></div><div class="info"><b>Atención</b><span>Pendiente, por revisar</span><code>warning · #E1A035</code></div></div>
+      <div class="sw"><div class="chip" style="background:var(--destructive)"></div><div class="info"><b>Error</b><span>Rechazado, bloqueado</span><code>destructive · #CC272E</code></div></div>
+    </div>
+  </section>
+
+  <section id="texto">
+    <div class="head">
+      <p class="eyebrow">Texto</p>
+      <h2>Una sola fuente: Inter.</h2>
+      <p class="lead">Cuatro tamaños cubren casi todo. Las cifras usan números de ancho fijo para que se alineen.</p>
+    </div>
+    <p class="aa">Aa</p>
+    <div class="type" style="margin-top:24px">
+      <div class="row"><span style="font-size:30px;font-weight:600">Cifra destacada</span><span class="meta">30 px · semibold</span></div>
+      <div class="row"><span style="font-size:20px;font-weight:600">Título de pantalla</span><span class="meta">20 px · semibold</span></div>
+      <div class="row"><span style="font-size:16px;font-weight:600">Título de sección</span><span class="meta">16 px · semibold</span></div>
+      <div class="row"><span style="font-size:14px">Texto de lectura: cuerpo, tablas y formularios</span><span class="meta">14 px · normal</span></div>
+      <div class="row"><span style="font-size:12px;color:var(--muted-foreground)">Texto secundario y notas</span><span class="meta">12 px · normal</span></div>
+    </div>
+  </section>
+
+  <section id="piezas">
+    <div class="head">
+      <p class="eyebrow">Piezas</p>
+      <h2>Siempre las mismas piezas.</h2>
+      <p class="lead">Botones, etiquetas, cifras y tablas salen de los mismos componentes. Aquí se ven tal como son.</p>
+    </div>
+
+    <div class="demo">
+      <p class="label">Botones</p>
+      <div class="row-wrap">
+        <button class="btn pri">Principal</button>
+        <button class="btn out">Secundario</button>
+        <button class="btn sec">Apoyo</button>
+        <button class="btn gho">Discreto</button>
+        <button class="btn des">Eliminar</button>
+      </div>
+    </div>
+
+    <div class="demo">
+      <p class="label">Etiquetas de estado</p>
+      <div class="row-wrap">
+        <span class="badge b-neu">Sin acción</span>
+        <span class="badge b-inf">En curso</span>
+        <span class="badge b-ok">Aprobado</span>
+        <span class="badge b-warn">Pendiente</span>
+        <span class="badge b-bad">Rechazado</span>
+      </div>
+    </div>
+
+    <div class="demo">
+      <p class="label">Tarjetas de cifra</p>
+      <div class="grid g3">
+        <div class="kpi"><small>Tareas de hoy</small><strong>12</strong></div>
+        <div class="kpi"><small>En revisión</small><strong>4</strong></div>
+        <div class="kpi alert"><small>Vencidas</small><strong>3</strong></div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <p class="label">Campo de texto</p>
+      <input class="input" placeholder="Buscar tareas…" aria-label="Buscar tareas" />
+    </div>
+
+    <div class="demo">
+      <p class="label">Tabla</p>
+      <table>
+        <thead><tr><th>Tarea</th><th>Responsable</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Revisar equipo de la sala 2</td><td>Camila R.</td><td><span class="badge b-warn">Pendiente</span></td></tr>
+          <tr><td>Subir fotos de evidencia</td><td>Diego M.</td><td><span class="badge b-inf">En curso</span></td></tr>
+          <tr><td>Informe semanal</td><td>Paula S.</td><td><span class="badge b-ok">Aprobado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="forma">
+    <div class="head">
+      <p class="eyebrow">Forma</p>
+      <h2>Esquinas suaves, medidas fijas.</h2>
+      <p class="lead">Seis radios y cuatro alturas. Nada más.</p>
+    </div>
+    <div class="demo">
+      <p class="label">Esquinas</p>
+      <div class="shape">
+        <div><i style="width:64px;height:64px;border-radius:4px"></i>4 px<br />detalles</div>
+        <div><i style="width:64px;height:64px;border-radius:6px"></i>6 px<br />botones y campos</div>
+        <div><i style="width:64px;height:64px;border-radius:8px"></i>8 px<br />casillas</div>
+        <div><i style="width:64px;height:64px;border-radius:12px"></i>12 px<br />tarjetas</div>
+        <div><i style="width:64px;height:64px;border-radius:999px"></i>círculo<br />pastillas</div>
+      </div>
+    </div>
+    <div class="demo">
+      <p class="label">Alturas</p>
+      <div class="shape">
+        <div><i style="width:96px;height:32px;border-radius:6px"></i>32 px<br />pequeño</div>
+        <div><i style="width:96px;height:36px;border-radius:6px"></i>36 px<br />normal</div>
+        <div><i style="width:96px;height:40px;border-radius:6px"></i>40 px<br />grande</div>
+        <div><i style="width:96px;height:44px;border-radius:6px"></i>44 px<br />fila de tabla</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="reglas">
+    <div class="head">
+      <p class="eyebrow">Reglas</p>
+      <h2>Lo que sí y lo que no.</h2>
+    </div>
+    <div class="rules">
+      <div class="card yes">
+        <h3>Sí</h3>
+        <ul>
+          <li>Usar los colores por su nombre.</li>
+          <li>Una sola acción principal por zona.</li>
+          <li>Títulos cortos, sin punto final.</li>
+          <li>Español de Chile, tuteando: «pulsa», «elige».</li>
+          <li>Diseñar primero para celular.</li>
+        </ul>
+      </div>
+      <div class="card no">
+        <h3>No</h3>
+        <ul>
+          <li>Códigos de color sueltos.</li>
+          <li>Efecto de vidrio ni degradados decorativos.</li>
+          <li>Cambiar el significado de rojo, ámbar o verde.</li>
+          <li>Español rioplatense: nada de «vos» ni «elegí».</li>
+          <li>Crear una pieza nueva si ya existe una igual.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>DentiHub · sistema de diseño, basado en Dentiventario.</p>
+    <p>Valores exactos y componentes: DESIGN_SYSTEM.md y la carpeta starter-kit/.</p>
+  </div>
+</footer>
+
+</body>
+</html>
