@@ -1,6 +1,6 @@
 # Agente de DentiHub: objetivos y límites
 
-Versión 1 · 2026-11-05 · **Borrador para aprobar.** Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
+Versión 2 · 2026-11-05 · **Borrador para aprobar.** (La v2 agrega la sección 8, sincronización de cambios.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
 
 ## 1. Quién es y a quién responde
 
@@ -66,7 +66,35 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 - Tras cada cambio de esquema, revisa los avisos de seguridad y regenera los tipos.
 - Prefiere herramientas que dejen el cambio **registrado como migración**, no ejecutado suelto.
 
-## 8. Cómo reporta
+## 8. Sincronización de cambios (obligatoria)
+
+**Regla.** Toda orden de Bernardo que cambie la estructura (módulos, roles, permisos, flujos, datos, diseño o las reglas del propio agente) se aplica **de una vez en todo lo que depende de ella, sin que haya que pedirlo**. Primero se actualiza la base (`docs/BASE-DEL-PRODUCTO.md`, o `DESIGN_SYSTEM.md` si es diseño) y después sus dependientes.
+
+| Si cambia… | Se actualiza, en este orden |
+|---|---|
+| **Diseño** (color, tipografía, tamaño, componente) | `starter-kit/src/styles.css` y `themes.css` → `DESIGN_SYSTEM.md` → `DESIGN_SYSTEM.html` → componentes del kit → la demo (su bloque de colores y sus clases) |
+| **Un módulo o pantalla** (nuevo, quitado o renombrado) | `docs/BASE-DEL-PRODUCTO.md` (tabla y línea `sync:modulos`) → la demo (menú, pantalla y datos de ejemplo) → `Prompts-Lovable-Prototipo-DentiHub.md` → `CLAUDE.md` si cambia el alcance → ADR de fases → landing, si existe |
+| **Un rol o un permiso** | `docs/BASE-DEL-PRODUCTO.md` (matriz y línea `sync:roles`) → `starter-kit/src/lib/roles.ts` → **migración SQL** (enum, RLS, políticas) → la demo (selector de rol y lo que ve cada rol) → `CLAUDE.md` y este archivo → pruebas de RLS |
+| **Un flujo** (aprobar, completar tarea, invitar…) | `docs/BASE-DEL-PRODUCTO.md` (sección de flujos) → la demo → prompts de Lovable → función o migración de base de datos → ADR o roadmap |
+| **Datos** (tabla o columna) | **Migración con reversa** → tipos de Supabase → `docs/BASE-DEL-PRODUCTO.md` (sección de datos) → datos de ejemplo de la demo |
+| **Arquitectura, stack o dominio** | ADR nuevo o actualizado → `CLAUDE.md` («Decisiones tomadas») → este archivo si cambian límites |
+| **Reglas del agente** | Este archivo (subir la versión) → resumen en `CLAUDE.md` |
+| **Textos de interfaz** | La demo → prompts de Lovable → landing → kit, si el texto es compartido |
+
+**Procedimiento, en cada cambio estructural**
+1. Identificar el tipo de cambio en la tabla y listar todo lo que toca.
+2. Actualizar la base primero y los dependientes en el mismo cambio, en el orden de la tabla.
+3. Verificar: `node scripts/verificar-sincronizacion.mjs`, el chequeo de tipos del kit si se tocó código, y la demo abierta si se tocó su funcionamiento. Buscar también los términos viejos que hayan quedado.
+4. En el resumen final, dos listas: **Sincronizado** (qué archivos se actualizaron) y **Pendiente de sincronizar** (qué quedó sin hacer y por qué). Nunca callar un pendiente.
+
+**Lo que la regla NO autoriza** (siguen valiendo las reglas de las secciones 4 y 5):
+- Ejecutar SQL en el Supabase real: la migración se **prepara, se destaca al inicio del resumen y espera confirmación**.
+- Subir a GitHub, hacer commits sin confirmación o editar archivos fuera de la carpeta (como el Excel del roadmap, que solo se actualiza en una copia y con permiso).
+- Borrar nada sin confirmación.
+
+**Qué comprueba el verificador y qué no.** Comprueba que coincidan módulos, roles (base, `roles.ts`, enum de SQL y selector de la demo), colores (demo y kit) y que `DESIGN_SYSTEM.md` mencione los valores del kit. **No** revisa prompts de Lovable, ADR, landing, el roadmap en Excel ni los textos: eso lo cubre el agente a mano con la tabla de arriba. Un cambio que no toca la estructura (una errata, un detalle visual menor) no necesita la cascada, pero sí pasar el verificador.
+
+## 9. Cómo reporta
 
 - En español, corto, sin desglose por fase: ejecuta de corrido y reporta al final.
 - **Primero los hallazgos**, sobre todo lo que no coincide con lo esperado o corrige algo dicho antes.
@@ -74,7 +102,7 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 - Cierra con un resumen breve y, si hubo cambios, un mensaje de commit sugerido.
 - Actúa con supuestos razonables y avisa después; solo pregunta lo que únicamente Bernardo puede decidir.
 
-## 9. Decisiones abiertas (Decide Bernardo)
+## 10. Decisiones abiertas (Decide Bernardo)
 
 1. **Commits:** ¿el agente pregunta cada vez (hoy) o hace commits locales solo, y pregunta solo para subir?
 2. **Push a GitHub:** ¿se mantiene siempre manual, o se habilita una regla de permiso para que lo haga el agente?
@@ -85,6 +113,6 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 7. **Plan de Supabase:** seguir en Free o pasar a Pro (copias de seguridad, protección de contraseñas filtradas).
 8. **Visibilidad del repositorio:** hoy `bernardoreveco/DentiHub` es **público**, así que este documento también. Por eso aquí no hay correos, claves ni datos del equipo.
 
-## 10. Cómo se mantiene este documento
+## 11. Cómo se mantiene este documento
 
 Cuando Bernardo cambie una regla, el agente actualiza este archivo y sube la versión. Lo que dice `CLAUDE.md` sobre secretos, Git y borrados **prevalece** sobre cualquier otra cosa escrita aquí.

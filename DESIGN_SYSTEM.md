@@ -298,3 +298,9 @@ Barra lateral clara de 72 px, encabezado fijo, contenido de 1280 px. Ver el come
 - No glassmorphism, no `backdrop-blur`, no degradados decorativos.
 - No alinear a la derecha ni centrar los datos de una tabla.
 - No crear un componente nuevo si uno del kit hace el trabajo; si falta uno, créalo con los mismos tokens y súmalo al kit.
+
+## 8. Dónde se aplica
+
+- **El kit** (`starter-kit/`) es la fuente de los valores: `src/styles.css` y `src/styles/themes.css`.
+- **La demo navegable** (`DentiHub-Modelo-Visual.html`) usa estos mismos colores, la tipografía Inter, la barra lateral de 72 px, las tarjetas de cifra, las pestañas, las tablas con etiquetas de estado y los avisos de 10 segundos arriba a la derecha. Define dos nombres distintos a los del kit (`--muted-bg` y `--hover`) porque su código ya usaba `--muted` y `--accent` con otro significado.
+- **Sincronización:** un cambio de diseño se refleja en el kit, en este documento, en `DESIGN_SYSTEM.html` y en la demo, en ese orden (`AGENTE.md`, sección 8). `node scripts/verificar-sincronizacion.mjs` comprueba que los colores de la demo y del kit coincidan.
