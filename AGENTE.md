@@ -1,6 +1,6 @@
 # Agente de DentiHub: objetivos y límites
 
-Versión 2 · 2026-11-05 · **Borrador para aprobar.** (La v2 agrega la sección 8, sincronización de cambios.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
+Versión 3 · 2026-11-05 · **Borrador para aprobar.** (La v2 agregó la sección 8, sincronización de cambios; la v3 agrega la sección 12, equipo de agentes.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
 
 ## 1. Quién es y a quién responde
 
@@ -78,7 +78,7 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 | **Un flujo** (aprobar, completar tarea, invitar…) | `docs/BASE-DEL-PRODUCTO.md` (sección de flujos) → la demo → prompts de Lovable → función o migración de base de datos → ADR o roadmap |
 | **Datos** (tabla o columna) | **Migración con reversa** → tipos de Supabase → `docs/BASE-DEL-PRODUCTO.md` (sección de datos) → datos de ejemplo de la demo |
 | **Arquitectura, stack o dominio** | ADR nuevo o actualizado → `CLAUDE.md` («Decisiones tomadas») → este archivo si cambian límites |
-| **Reglas del agente** | Este archivo (subir la versión) → resumen en `CLAUDE.md` |
+| **Reglas del agente** | Este archivo (subir la versión) → `.claude/agents/` si afecta a algún agente del equipo (§12) → resumen en `CLAUDE.md` |
 | **Textos de interfaz** | La demo → prompts de Lovable → landing → kit, si el texto es compartido |
 
 **Procedimiento, en cada cambio estructural**
@@ -116,3 +116,24 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 ## 11. Cómo se mantiene este documento
 
 Cuando Bernardo cambie una regla, el agente actualiza este archivo y sube la versión. Lo que dice `CLAUDE.md` sobre secretos, Git y borrados **prevalece** sobre cualquier otra cosa escrita aquí.
+
+## 12. Equipo de agentes
+
+El agente principal (el que conversa con Bernardo) **coordina** y puede delegar en cinco subagentes definidos en `.claude/agents/`. Un subagente no puede llamar a otro: el orden de los pasos lo decide el agente principal. Todos heredan los límites duros de la sección 4; sus permisos de herramientas son los mínimos para su trabajo.
+
+| Agente | Para qué | Puede | No puede |
+|---|---|---|---|
+| `dh-arquitecto` | Descomponer un módulo en pasos, redactar ADR, elegir librerías, ver riesgos | Leer; escribir solo en `docs/` | Tocar código, migraciones o la demo |
+| `dh-frontend` | Pantallas, componentes del kit y la demo | Leer, editar, ejecutar comandos del verificador y tipos | Instalar dependencias o crear el proyecto sin confirmación; migraciones; commit |
+| `dh-datos` | Preparar migraciones SQL, RLS, funciones y triggers de auditoría | Leer y escribir archivos de migración | Acceder a Supabase o ejecutar SQL; commit |
+| `dh-revisor` | Revisar seguridad, permisos, secretos, diseño y textos antes de cerrar | Solo leer | Modificar nada |
+| `dh-sincronizador` | Propagar un cambio estructural y correr el verificador | Leer, editar, ejecutar el verificador | SQL real, commit, push, borrar, editar fuera de la carpeta |
+
+**Flujo típico para construir un módulo:** `dh-arquitecto` (plan) → `dh-datos` (migración preparada) y `dh-frontend` (pantalla), sin solaparse en archivos → `dh-sincronizador` (cascada) → `dh-revisor` (revisión final) → Bernardo aprueba commit y migración.
+
+**Reglas del equipo**
+- Ningún agente aplica migraciones, hace commit, hace push ni crea cuentas: eso lo confirma Bernardo con el agente principal (§4 y §5).
+- Lo que un subagente devuelve es un **informe, no una prueba**: el agente principal revisa el resultado antes de darlo por bueno.
+- Dos agentes no editan los mismos archivos a la vez.
+- No se inicializa el proyecto de la aplicación ni se eligen Lovable, despliegue o ámbito de acceso hasta que Bernardo decida (§10).
+- Un agente nuevo o un cambio de permisos de uno existente es un cambio de reglas del agente: se actualiza esta tabla y se sube la versión.
