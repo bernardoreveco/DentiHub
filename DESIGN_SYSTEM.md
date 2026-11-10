@@ -158,7 +158,7 @@ Escala de Tailwind (1 unidad = 4 px).
 
 **Íconos:** Lucide, trazo de 2 px. 16 px (`size-4`) en botones y menús, 20 px (`size-5`) en la barra lateral.
 
-**Estructura:** barra lateral fija de **72 px** solo con íconos (al pasar el cursor se abre el grupo); en celular, panel deslizante de 256 px. Encabezado superior fijo. Solo el contenido hace scroll. Punto de quiebre principal: `lg` (1024 px). Rejillas: 4 columnas de KPI en `lg` (1–2 en pantallas chicas).
+**Estructura:** la app ocupa **exactamente la ventana**, como una aplicación: la página nunca se desplaza. Barra lateral fija de **72 px** solo con íconos (al pasar el cursor se abre el grupo) y encabezado superior fijo; **solo el contenido hace scroll**, dentro de su recuadro. En celular, **barra de módulos abajo**, con ícono y nombre, al alcance del pulgar (así quedó en la demo el 10-11-2026; el `AppShell` del kit todavía usa un panel deslizante de 256 px, ver §8). Punto de quiebre principal: `lg` (1024 px). Rejillas: 4 columnas de KPI en `lg` (1–2 en pantallas chicas).
 
 ## 4. Componentes (todos en `starter-kit/src/components/`)
 
@@ -302,5 +302,5 @@ Barra lateral clara de 72 px, encabezado fijo, contenido de 1280 px. Ver el come
 ## 8. Dónde se aplica
 
 - **El kit** (`starter-kit/`) es la fuente de los valores: `src/styles.css` y `src/styles/themes.css`.
-- **La demo navegable** (`DentiHub-Modelo-Visual.html`) usa estos mismos colores, la tipografía Inter, la barra lateral de 72 px, las tarjetas de cifra, las pestañas, las tablas con etiquetas de estado y los avisos de 10 segundos arriba a la derecha. Define dos nombres distintos a los del kit (`--muted-bg` y `--hover`) porque su código ya usaba `--muted` y `--accent` con otro significado.
+- **La demo navegable** (`DentiHub-Modelo-Visual.html`) usa estos mismos colores, la tipografía Inter, la barra lateral de 72 px, las tarjetas de cifra, las pestañas, las tablas con etiquetas de estado y los avisos de 10 segundos arriba a la derecha. Define dos nombres distintos a los del kit (`--muted-bg` y `--hover`) porque su código ya usaba `--muted` y `--accent` con otro significado. Ocupa toda la ventana con desplazamiento solo en el contenido (igual que el `AppShell` del kit) y, en celular, usa la barra de módulos inferior y cifras compactas en una fila. **Pendiente:** llevar esa barra inferior al `AppShell` del kit, que hoy usa un panel deslizante.
 - **Sincronización:** un cambio de diseño se refleja en el kit, en este documento, en `DESIGN_SYSTEM.html` y en la demo, en ese orden (`AGENTE.md`, sección 8). `node scripts/verificar-sincronizacion.mjs` comprueba que los colores de la demo y del kit coincidan.
