@@ -7,6 +7,7 @@ Objetivo: un prototipo **solo visual y navegable** para mostrar al equipo. Sin b
 2. Cuando termine y revises el resultado, pega los **Prompts por módulo** de a uno, en orden. Lovable funciona mejor con pasos pequeños que con un solo prompt gigante.
 3. Después de cada paso, navega el resultado y corrige antes de pasar al siguiente.
 4. **No conectes Supabase** ni ningún servicio en esta etapa. Si Lovable lo sugiere, ignóralo.
+5. **Alcance real:** este prototipo muestra la visión completa. La construcción empieza por la Etapa 1 (ADR-0002), que cubre Inicio, Tareas, Reportes y Administración. Mensajes, Archivos, Documentos, Wiki, Planillas y Aprobaciones son Etapa 2.
 
 ---
 

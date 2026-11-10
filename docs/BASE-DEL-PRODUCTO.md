@@ -10,18 +10,22 @@ Las líneas `<!-- sync:… -->` las lee el verificador: **no las borres**; actua
 
 <!-- sync:modulos inicio,msj,arch,docs,wiki,plan,tareas,aprob,rep,admin -->
 
-| Clave | Módulo | Qué hace | Estado en la base de datos real |
-|---|---|---|---|
-| `inicio` | Inicio | Resumen del día: tareas, cifras, actividad reciente y accesos rápidos | Por construir (Fase 1, pantalla «Lobby») |
-| `msj` | Mensajes | Canales por área (uno cerrado, solo Gestión publica), mensajes directos y menciones con `@` | Por construir (Fase 5) |
-| `arch` | Archivos | Carpetas compartidas con permisos por carpeta, subir y arrastrar, visor, eliminar con auditoría | Por construir (Fase 2) |
-| `docs` | Documentos | Documento colaborativo con comentarios y menciones | Por construir (Fase 5) |
-| `wiki` | Wiki | Páginas por sección (procedimientos, manuales, preguntas frecuentes), con enlace a checklists | Por construir (Fase 5) |
-| `plan` | Planillas | Tabla compartida en vistas de cuadrícula, tablero y calendario, con filtro, fórmula de suma y cursores de otras personas | Por construir (Fase 3) |
-| `tareas` | Tareas | Lista, tablero, calendario y vista de celular con QR; checklists, repetición y **foto de evidencia obligatoria** | Por construir (Fase 4) |
-| `aprob` | Aprobaciones | Solicitudes con estado; quien tiene rol de gestión aprueba o rechaza | Por construir (Fase 5) |
-| `rep` | Reportes | Cumplimiento, tareas urgentes, aprobaciones pendientes y reglas de alerta | Por construir (Fase 6) |
-| `admin` | Administración | Usuarios (invitar, rol, estado) y auditoría de solo lectura | **Parcial:** `profiles`, `user_roles` y `audit_log` ya existen en Supabase (Fases 1 y 8) |
+| Clave | Módulo | Etapa | Qué hace | Estado en la base de datos real |
+|---|---|---|---|---|
+| `inicio` | Inicio | **1** | Resumen del día: tareas, cifras, actividad reciente y accesos rápidos | Por construir (Fase 1, pantalla «Lobby») |
+| `msj` | Mensajes | 2 | Canales por área (uno cerrado, solo Gestión publica), mensajes directos y menciones con `@` | Por construir (Fase 5) |
+| `arch` | Archivos | 2 | Carpetas compartidas con permisos por carpeta, subir y arrastrar, visor, eliminar con auditoría | Por construir (Fase 2) |
+| `docs` | Documentos | 2 | Documento colaborativo con comentarios y menciones | Por construir (Fase 5) |
+| `wiki` | Wiki | 2 | Páginas por sección (procedimientos, manuales, preguntas frecuentes), con enlace a checklists | Por construir (Fase 5) |
+| `plan` | Planillas | 2 | Tabla compartida en vistas de cuadrícula, tablero y calendario, con filtro, fórmula de suma y cursores de otras personas | Por construir (Fase 3) |
+| `tareas` | Tareas | **1** | Lista, tablero, calendario y vista de celular con QR; checklists, repetición y **foto de evidencia obligatoria** | En preparación: migraciones de la Etapa 1 escritas, sin aplicar (Fase 4) |
+| `aprob` | Aprobaciones | 2 | Solicitudes con estado; quien tiene rol de gestión aprueba o rechaza | Por construir (Fase 5) |
+| `rep` | Reportes | **1** | Etapa 1: cumplimiento por persona, área y periodo, tareas urgentes y alertas simples. Etapa 2: aprobaciones pendientes y reglas avanzadas | Por construir (Fase 6 básica) |
+| `admin` | Administración | **1** | Usuarios (invitar, rol, estado), áreas y auditoría de solo lectura | **Parcial:** `profiles`, `user_roles` y `audit_log` ya existen en Supabase (Fases 1 y 8) |
+
+### Alcance por etapa
+
+Por decisión de Bernardo ([ADR-0002](adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10) se construye primero la **Etapa 1: app de terreno** (módulos en negrita: Inicio, Tareas, Reportes y Administración). Los demás módulos son **Etapa 2** y se deciden según el uso real. **La demo sigue mostrando la visión completa** y no se recorta. Por eso la línea `sync:modulos` conserva los 10 módulos: es la lista del producto, no la de la etapa.
 
 **Transversal (en la demo):** ingreso con correo y clave más verificación en dos pasos (simulada), registro solo por invitación, recuperación de clave, búsqueda global, notificaciones, indicador En línea / Sin conexión, y «Sugerir un cambio» para recoger ideas del equipo.
 
@@ -44,6 +48,8 @@ Regla de código de la demo: «gestión» = todo rol distinto de Técnico; «Adm
 
 ## 3. Flujos
 
+**Etapa de cada flujo (ADR-0002):** Etapa 1 = 1, 3, 4 y 5. Etapa 2 = 2 (aprobaciones), 6 (la cola sin conexión completa; en la Etapa 1 solo el indicador y la base preparada) y 7 (mensajes). En la Etapa 1 las alertas del flujo 4 avisan a Gestores y Administradores; el «canal de urgencias» es Etapa 2. En el flujo 1, **la regla de completar la tarea se impone en la base de datos** (función transaccional), no solo en la interfaz.
+
 1. **Completar una tarea.** Exige todos los pasos del checklist marcados **y** la foto de evidencia. Sin foto, no se puede cerrar y se explica por qué. Al completarla se registra en la auditoría y se notifica. Sin conexión, la foto queda «pendiente de sincronizar» y se sube sola al volver la señal.
 2. **Aprobación.** Cualquier persona crea una solicitud (estado Pendiente) → un Gestor o Administrador la aprueba o la rechaza → se notifica a quien la pidió y queda en la auditoría.
 3. **Alta de personas.** El Administrador invita por correo con rol y área (estado Invitado). Puede activar o desactivar cuentas y cambiar roles; todo queda auditado. No hay registro abierto.
@@ -59,10 +65,16 @@ Qué tablas existen y cuáles se planean (nombres provisorios):
 | Estado | Tablas |
 |---|---|
 | **Existen** en Supabase | `profiles`, `user_roles`, `audit_log` |
-| **Planeadas** | `teams` y `team_members` (áreas; el ámbito aún no está decidido), `role_page_permissions`, `folders`, `files`, tablas de planillas, `task_templates`, `tasks`, `task_responses`, `evidence`, `recurrences`, `approval_requests`, `channels`, `channel_members`, `messages`, `documents`, `wiki_pages`, `alert_rules`, `alerts` |
+| **Etapa 1: migraciones escritas, sin aplicar** (en revisión; nombres provisorios hasta cerrar la revisión) | `organizations`, `areas`, `user_areas`, `form_templates`, `task_definitions`, `tasks`, `task_evidence`; bucket privado `evidence`; funciones `admin_assign_member`, `admin_set_active`, `admin_list_unassigned_accounts`, `create_form_template`, `save_task_progress`, `complete_task`, `cancel_task`, `register_evidence`, `generate_recurring_tasks` |
+| **Etapa 1: por diseñar** | `notifications`, `alert_rules`, `alerts`, `role_page_permissions` |
+| **Etapa 2** (planeadas) | `folders`, `files`, tablas de planillas, `approval_requests`, `channels`, `channel_members`, `messages`, `documents`, `wiki_pages` |
+
+**Reglas de datos de la Etapa 1:** el rol de una persona vive en `user_roles` (una fila por persona), nunca en `profiles`; la organización y el rol los asigna un administrador con una función transaccional, jamás salen de datos que controla quien se registra; una persona sin organización o con la cuenta desactivada no tiene acceso; completar una tarea exige pasos y foto **en la base de datos**; el registro de auditoría es de solo inserción.
+
+**Límites y reglas de evidencia (provisorios, constantes fáciles de cambiar en la migración):** una foto debe pesar al menos 10 KB, ser de un tipo de imagen permitido (JPG, PNG, WebP, HEIC o HEIF) y no repetirse (mismo `eTag`) en la misma tarea; máximo 20 objetos por tarea; las respuestas de una tarea no pasan de 32 KB; una versión antigua de una plantilla no se reactiva si existe una mayor; el administrador puede listar las cuentas creadas que aún no tienen organización para asignarlas. Verificar el contenido real de la foto queda para una función de servidor (pendiente).
 
 ## 5. Pendientes que cambian esta base
 
-- Definir el ámbito de acceso (equipo, área o proyecto).
+- Confirmar el ámbito de acceso: el ADR-0002 asume **organización con áreas** (`org_id`, una sola organización por ahora).
 - Unificar el nombre del rol «Operativo» (aparece en un ejemplo del roadmap) con Técnico.
 - Si DentiHub es herramienta interna o producto para otras empresas.

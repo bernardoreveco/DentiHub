@@ -1,12 +1,17 @@
 # Supabase: migraciones, permisos y seguridad
 
-> ⚠ **El SQL de esta carpeta NO se ha ejecutado ni probado contra una base real.** No existe aún un proyecto de Supabase de DentiHub (decisión pendiente según el `CLAUDE.md`). Pruébalo primero en un proyecto de desarrollo.
+> ⚠ **Estado (2026-11-10).** La migración base **está aplicada** en el Supabase real de DentiHub (se aplicó a mano y se verificó). La de endurecimiento (`20261105130000`) y las tres de la Etapa 1 (`20261110…`) están **escritas y revisadas, pero NO aplicadas ni probadas**: aplícalas **en orden** y primero en un proyecto de **desarrollo**; el plan de pruebas está en `pruebas/etapa1-pruebas-rls.md`. No vuelvas a ejecutar la de endurecimiento después de las de la Etapa 1.
 
 ## Archivos
 
 | Archivo | Qué es |
 |---|---|
 | `migrations/20260101000000_base_perfiles_roles_auditoria.sql` | Tipo `app_role` (admin, gestor, tecnico), `profiles`, `user_roles`, `audit_log`, funciones `has_role()` / `is_admin()`, triggers, permisos y políticas RLS. |
+| `migrations/20261105130000_endurecer_permisos_y_roles.sql` | Quita los permisos de tabla de más a `anon` y `authenticated`, un solo rol por persona (`UNIQUE (user_id)`) y protección del último administrador. **No aplicada.** |
+| `migrations/20261110120000_etapa1_organizacion_y_areas.sql` | Organizaciones, áreas, `profiles.org_id` y `active`, funciones de administración de miembros. **No aplicada.** |
+| `migrations/20261110130000_etapa1_tareas_evidencia_storage.sql` | Plantillas, tareas, evidencia, bucket privado `evidence` y funciones para completar tareas. **No aplicada.** |
+| `migrations/20261110140000_etapa1_auditoria_inmutable.sql` | Auditoría de solo inserción (incluido `TRUNCATE`) y lectura por organización. **No aplicada.** |
+| `pruebas/etapa1-pruebas-rls.md` | Plan de pruebas de RLS y permisos para correr en un proyecto de desarrollo. |
 | `plantilla-migracion.sql` | Molde comentado para toda migración nueva (tabla con RLS, auditoría, reversa). No es una migración: no va dentro de `migrations/`. |
 
 ## Cómo se escribe una migración (patrón de Dentiventario)
@@ -21,6 +26,9 @@
 8. **Varios pasos que deben salir «todo o nada»** (recibir, aprobar, mover): una función de base de datos transaccional, no varias llamadas del navegador.
 9. **Scripts de datos de una sola vez** (regularizar, reparar) no van entre las migraciones: en Dentiventario viven en `supabase/manual/` con fecha, y la revisión de arquitectura señala que mezclarlos con lo definitivo es un riesgo. Mantén esa carpeta aparte y rotulada.
 10. **Después de cada migración:** regenerar los tipos (`supabase gen types typescript`) y quitar los casts temporales.
+11. **Permisos de tabla explícitos.** Después de la migración de endurecimiento las tablas nuevas **ya no nacen con todos los privilegios** para `anon` y `authenticated`: cada tabla necesita sus `GRANT` mínimos (por columna cuando corresponda) o quedará inaccesible por la API. `anon` no recibe nada salvo que haya una razón escrita.
+12. **Reglas de negocio en la base, no solo en la interfaz.** Lo que debe cumplirse siempre (por ejemplo, completar una tarea exige pasos y foto) va en una función transaccional más un trigger de guarda, y se revoca el `UPDATE` directo de las columnas afectadas.
+13. **Storage:** las políticas de `storage.objects` deben verificar la ruta (organización y tarea), no solo el bucket; las subidas usan `upsert: false` y las URLs firmadas son de vida corta.
 
 ## Cómo se aplican (no confirmado)
 
@@ -50,7 +58,7 @@ CREATE TABLE public.role_page_permissions (
 
 ### Permisos por sucursal (o por equipo / área)
 
-En Dentiventario el ámbito es la **sucursal**: `profiles.branch_id`, `my_branch_id()` y `can_access_branch(_branch_id) = is_staff() OR _branch_id = my_branch_id()`, usada en las políticas de cada tabla con `branch_id` (y, para tablas hijas, vía `EXISTS` sobre la tabla padre). Es un buen patrón y es el que DentiHub debería copiar **cuando defina su propio ámbito** (por ejemplo, equipo o proyecto), cambiando solo los nombres. Aquí no se incluyó porque el ámbito de DentiHub no está decidido.
+En Dentiventario el ámbito es la **sucursal**: `profiles.branch_id`, `my_branch_id()` y `can_access_branch(_branch_id) = is_staff() OR _branch_id = my_branch_id()`, usada en las políticas de cada tabla con `branch_id` (y, para tablas hijas, vía `EXISTS` sobre la tabla padre). Es un buen patrón. **DentiHub usa organización y áreas** (supuesto del ADR-0002, pendiente de confirmar): `profiles.org_id`, `auth_org()` y áreas por persona, con las políticas de cada tabla de negocio acotadas por `org_id`. Una persona sin organización, o con la cuenta desactivada, no tiene acceso (fail-closed).
 
 Dos lecciones de Dentiventario para ese día: (1) una persona no debe poder cambiarse a sí misma de ámbito, y allí hubo que agregar un trigger de guarda por un hallazgo crítico; (2) la sucursal de pruebas necesitó aislamiento propio y todavía tiene un problema abierto: si se agrega un modo de prueba, diseñar su aislamiento desde el inicio.
 

@@ -15,6 +15,7 @@ Roadmap de 8 fases: `C:\Users\berna\Downloads\Roadmap DentiHub.xlsx` (todo en 0%
 
 ## Decisiones tomadas
 - Primero un **prototipo navegable sin base de datos** para socializar con el equipo; el backend solo después de aprobarlo.
+- **Alcance de construcción: Etapa 1 acotada = app de terreno** ([ADR-0002](docs/adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10): ingreso por invitación, roles y áreas, tareas con checklist y foto de evidencia obligatoria, alertas, reportes simples y auditoría. Archivos, mensajes, documentos, wiki, planillas, aprobaciones y el modo sin conexión completo son **Etapa 2**. La demo sigue mostrando la visión completa. Se asume multi-organización (`org_id`) con una sola organización por ahora.
 - Backend recomendado para producción: **Supabase Pro** (roles con permisos por fila, auditoría, archivos en el mismo proveedor). Pendiente de decidir tras el prototipo.
 - La edición simultánea en tiempo real y el modo sin conexión son lo más riesgoso; en el prototipo solo se simulan.
 - Diseñar permisos y auditoría desde la fase 1, no al final.
@@ -70,5 +71,5 @@ Léelo al empezar: [`AGENTE.md`](AGENTE.md). Resumen: respondes solo a Bernardo;
 2. Pegar los prompts en Lovable y revisar el resultado con el equipo.
 3. ~~Crear el Git nuevo y subir esta carpeta~~ (hecho: `bernardoreveco/DentiHub`). Queda decidir si `DentiHub-Modelo-Visual.html` y la carpeta duplicada `DentiHub/DentiHub/` se mantienen.
 4. **Dentiventario** (inventario `image-inv-wiz`, con un problema de aislamiento en la sucursal de testeo) es **otro proyecto**, que no está en esta carpeta. Solo se leyó para extraer el kit; no se modificó.
-5. Decidir: ámbito de acceso de DentiHub (equipo, área o proyecto; en Dentiventario es la sucursal), uso de Lovable, dónde se despliega, cómo se aplican las migraciones, y si las tablas serán más densas que las de Dentiventario (filas de 44 px).
+5. Decidir: confirmar el ámbito de acceso (el ADR-0002 asume organización con áreas; en Dentiventario es la sucursal), si DentiHub es herramienta interna o producto para otras empresas, uso de Lovable, dónde se despliega, cómo se aplican las migraciones, y si las tablas serán más densas que las de Dentiventario (filas de 44 px).
 6. Kit pendiente de una segunda pasada: pantallas de acceso e invitación de usuarios (`auth`, `invitations.functions.ts`), que no se revisaron a fondo.

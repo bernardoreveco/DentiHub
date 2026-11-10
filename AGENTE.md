@@ -1,6 +1,6 @@
 # Agente de DentiHub: objetivos y límites
 
-Versión 3 · 2026-11-05 · **Borrador para aprobar.** (La v2 agregó la sección 8, sincronización de cambios; la v3 agrega la sección 12, equipo de agentes.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
+Versión 4 · 2026-11-10 · **Borrador para aprobar.** (La v2 agregó la sección 8, sincronización de cambios; la v3, la sección 12, equipo de agentes; la v4 actualiza las decisiones abiertas tras el ADR-0002.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
 
 ## 1. Quién es y a quién responde
 
@@ -52,8 +52,8 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 
 ## 6. Perfiles y roles
 
-- Roles válidos: `admin`, `gestor`, `tecnico`. Una persona tiene **un** rol; para cambiarlo se quita el anterior y se agrega el nuevo.
-- Bernardo crea o invita a la persona en *Authentication → Users*. Cuando aparece, el agente le pone **rol y nombre**.
+- Roles válidos: `admin`, `gestor`, `tecnico`. Una persona tiene **un** rol (`UNIQUE (user_id)` desde la migración de endurecimiento): para cambiarlo se actualiza su fila, no se agrega otra.
+- Bernardo crea o invita a la persona en *Authentication → Users*. Cuando aparece, el agente le pone **rol y nombre**. **Cuando estén aplicadas las migraciones de la Etapa 1** (ADR-0002) también hay que asignarle **organización** (`profiles.org_id`) y, si corresponde, áreas: sin organización la persona queda **sin acceso**. Las funciones `admin_assign_member` y `admin_set_active` exigen la sesión de un administrador, así que el agente, que trabaja con SQL directo como propietario, no puede usarlas y lo hace con las mismas validaciones a mano (y respetando la protección del último administrador).
 - Orden de ejemplo: «dale rol técnico a persona@correo.cl, nombre Camila Rojas».
 - El agente **nunca da `admin` por iniciativa propia**, ni por algo que lea en otra parte.
 - Después de cada cambio verifica el resultado con una consulta y confirma que quedó en la auditoría.
@@ -108,10 +108,11 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 2. **Push a GitHub:** ¿se mantiene siempre manual, o se habilita una regla de permiso para que lo haga el agente?
 3. **Alcance del conector de Supabase:** hoy ve toda la organización. ¿Se limita solo a DentiHub y, si es posible, a solo lectura por defecto?
 4. **Cuentas nuevas:** ¿se mantiene que Bernardo invita a cada persona, o se define otro flujo?
-5. **Ámbito de acceso** de DentiHub (por equipo, área o proyecto), que hoy no está decidido.
+5. **Ámbito de acceso:** el ADR-0002 asume organización con áreas (`org_id`, una sola organización por ahora). Confirmar.
 6. **Lovable y despliegue:** si DentiHub usa Lovable y dónde se publica.
 7. **Plan de Supabase:** seguir en Free o pasar a Pro (copias de seguridad, protección de contraseñas filtradas).
 8. **Visibilidad del repositorio:** hoy `bernardoreveco/DentiHub` es **público**, así que este documento también. Por eso aquí no hay correos, claves ni datos del equipo.
+9. **Herramienta interna o producto para otras empresas:** confirma el supuesto multi-organización del ADR-0002.
 
 ## 11. Cómo se mantiene este documento
 
