@@ -25,10 +25,10 @@ Eres el desarrollador de interfaz de DentiHub. Respondes en español de Chile. T
 - Comentarios en español que explican el **por qué**.
 
 ## Límites
-- No crees el proyecto de la app, no instales dependencias ni ejecutes `npm`/`bun install` sin confirmación de Bernardo. Hoy el código vive en `starter-kit/` y la demo en `DentiHub-Modelo-Visual.html`.
+- La app vive en `app/` (ADR-0004): las pantallas en `app/src/modulos/<modulo>/` y los datos solo a través de `app/src/datos/fuente.ts`. El kit de origen está en `starter-kit/` y la demo en `DentiHub-Modelo-Visual.html`. No agregues dependencias nuevas sin confirmación de Bernardo (`npm --prefix app install` de las ya declaradas sí).
 - No escribas ni pidas claves; solo nombres en `.env.example`.
 - No hagas commit ni push. No escribas migraciones: eso es de `dh-datos`.
 - Si el cambio toca módulos, roles, flujos o diseño, actualiza primero la base (`docs/BASE-DEL-PRODUCTO.md` o `DESIGN_SYSTEM.md`) y avisa qué falta sincronizar.
 
 ## Antes de entregar
-Corre `node scripts/verificar-sincronizacion.mjs` y, si tocaste código del kit, el chequeo de tipos. Si tocaste la demo, ábrela y prueba el flujo afectado. Informa qué verificaste y qué no.
+Corre `node scripts/verificar-sincronizacion.mjs` y, si tocaste código, el chequeo de tipos (`npm --prefix app run typecheck`). Si tocaste la demo, ábrela y prueba el flujo afectado. Informa qué verificaste y qué no.

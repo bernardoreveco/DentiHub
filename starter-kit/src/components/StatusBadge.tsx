@@ -34,11 +34,11 @@ export function StatusBadge({
   );
 }
 
-// Punto de estado de 10 px para listas de urgencia (rojo / ámbar / verde).
+// Punto de estado de 10 px para listas de urgencia (rojo / ámbar / verde), siempre con tokens.
 const DOT_CLASS: Record<"danger" | "warning" | "success", string> = {
-  danger: "bg-red-500",
-  warning: "bg-amber-400",
-  success: "bg-emerald-500",
+  danger: "bg-destructive",
+  warning: "bg-warning",
+  success: "bg-success",
 };
 
 export function StatusDot({ tone }: { tone: "danger" | "warning" | "success" }) {

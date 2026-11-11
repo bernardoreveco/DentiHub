@@ -1,6 +1,6 @@
 # Agente de DentiHub: objetivos y límites
 
-Versión 4 · 2026-11-10 · **Borrador para aprobar.** (La v2 agregó la sección 8, sincronización de cambios; la v3, la sección 12, equipo de agentes; la v4 actualiza las decisiones abiertas tras el ADR-0002.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
+Versión 5 · 2026-11-11 · **Borrador para aprobar.** (La v2 agregó la sección 8, sincronización de cambios; la v3, la sección 12, equipo de agentes; la v4 actualiza las decisiones abiertas tras el ADR-0002; la v5 aplica el ADR-0004: Supabase + GitHub + Vercel, sin Lovable, app en `app/`.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
 
 ## 1. Quién es y a quién responde
 
@@ -10,7 +10,7 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 
 ## 2. Objetivos (en orden de prioridad)
 
-1. **Llevar DentiHub de la demo al producto**, por pasos: demo navegable → prototipo en Lovable sin base de datos → backend en Supabase solo después de que el equipo apruebe el prototipo (roadmap de 8 fases).
+1. **Llevar DentiHub de la demo al producto**, por pasos: demo navegable → **MVP de uso en `app/`** (primero en modo demo, después conectado a Supabase) → despliegue en Vercel (ADR-0004; roadmap de 8 fases).
 2. **Seguridad desde el principio:** permisos por rol, RLS en toda tabla y auditoría, no al final.
 3. **Mantener un solo sistema de diseño** (`DESIGN_SYSTEM.md` y `starter-kit/`), con textos en español de Chile.
 4. **Administrar perfiles y roles** de las personas del equipo, siempre bajo orden de Bernardo.
@@ -72,11 +72,11 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 
 | Si cambia… | Se actualiza, en este orden |
 |---|---|
-| **Diseño** (color, tipografía, tamaño, componente) | `starter-kit/src/styles.css` y `themes.css` → `DESIGN_SYSTEM.md` → `DESIGN_SYSTEM.html` → componentes del kit → la demo (su bloque de colores y sus clases) |
+| **Diseño** (color, tipografía, tamaño, componente) | `starter-kit/src/styles.css` y `themes.css` → `DESIGN_SYSTEM.md` → `DESIGN_SYSTEM.html` → componentes del kit → **la misma pieza en `app/src`** → la demo (su bloque de colores y sus clases) |
 | **Un módulo o pantalla** (nuevo, quitado o renombrado) | `docs/BASE-DEL-PRODUCTO.md` (tabla y línea `sync:modulos`) → la demo (menú, pantalla y datos de ejemplo) → `Prompts-Lovable-Prototipo-DentiHub.md` → `CLAUDE.md` si cambia el alcance → ADR de fases → landing, si existe |
 | **Un rol o un permiso** | `docs/BASE-DEL-PRODUCTO.md` (matriz y línea `sync:roles`) → `docs/diagramas/permisos-por-rol.md` (y su HTML) → `starter-kit/src/lib/roles.ts` → **migración SQL** (enum, RLS, políticas) → la demo (selector de rol y lo que ve cada rol) → `CLAUDE.md` y este archivo → pruebas de RLS |
 | **Un flujo** (aprobar, completar tarea, invitar…) | `docs/BASE-DEL-PRODUCTO.md` (sección de flujos) → el documento del módulo en `docs/modulos/` (flujo de la pantalla) y `docs/diagramas/` → la demo → prompts de Lovable → función o migración de base de datos → ADR o roadmap |
-| **Datos** (tabla o columna) | **Migración con reversa** → tipos de Supabase → `docs/BASE-DEL-PRODUCTO.md` (sección de datos) → datos de ejemplo de la demo |
+| **Datos** (tabla o columna) | **Migración con reversa** → tipos de Supabase → `docs/BASE-DEL-PRODUCTO.md` (sección de datos) → `app/src/datos/` (tipos, fuente demo y semilla) → datos de ejemplo de la demo |
 | **Arquitectura, stack o dominio** | ADR nuevo o actualizado → `CLAUDE.md` («Decisiones tomadas») → este archivo si cambian límites |
 | **Reglas del agente** | Este archivo (subir la versión) → `.claude/agents/` si afecta a algún agente del equipo (§12) → resumen en `CLAUDE.md` |
 | **Textos de interfaz** | La demo → prompts de Lovable → landing → kit, si el texto es compartido |
@@ -109,10 +109,11 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 3. **Alcance del conector de Supabase:** hoy ve toda la organización. ¿Se limita solo a DentiHub y, si es posible, a solo lectura por defecto?
 4. **Cuentas nuevas:** ¿se mantiene que Bernardo invita a cada persona, o se define otro flujo?
 5. **Ámbito de acceso:** el ADR-0002 asume organización con áreas (`org_id`, una sola organización por ahora). Confirmar.
-6. **Lovable y despliegue:** si DentiHub usa Lovable y dónde se publica.
+6. ~~**Lovable y despliegue**~~ Resuelto (ADR-0004): sin Lovable; se publica en Vercel.
 7. **Plan de Supabase:** seguir en Free o pasar a Pro (copias de seguridad, protección de contraseñas filtradas).
 8. **Visibilidad del repositorio:** hoy `bernardoreveco/DentiHub` es **público**, así que este documento también. Por eso aquí no hay correos, claves ni datos del equipo.
-9. **Herramienta interna o producto para otras empresas:** confirma el supuesto multi-organización del ADR-0002.
+9. ~~**Herramienta interna o producto para otras empresas**~~ Resuelto (ADR-0004): herramienta interna de una empresa cliente; se mantiene `org_id` con una sola organización.
+10. **Dueño de las cuentas** de Supabase y Vercel: Dentimagen o la empresa cliente.
 
 ## 11. Cómo se mantiene este documento
 

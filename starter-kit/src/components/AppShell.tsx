@@ -2,16 +2,14 @@
 //   [Barra lateral clara de 72 px, solo íconos] | [Encabezado fijo] [Contenido, máx. 1280 px]
 // - En escritorio (≥ 1024 px) cada grupo es un ícono; al pasar el cursor se abre un panel con sus
 //   páginas. Un grupo con una sola página es un enlace directo con globo de texto.
-// - En celular la barra se reemplaza por un panel deslizante de 256 px con la lista completa.
+// - En celular (< 1024 px) la barra lateral se reemplaza por una barra inferior de hasta 5 páginas.
 // - Solo el contenido hace scroll: la barra y el encabezado quedan siempre fijos.
 //
 // No depende del enrutador: la navegación entra por `renderLink` (TanStack Router, Next.js, etc.)
 // y la página activa por `activePath`. Qué páginas ve cada rol se resuelve ANTES, filtrando
 // `groups` con canAccessPage (src/lib/roles.ts); los grupos vacíos no deben pasarse.
-import { useState, type ReactNode } from "react";
-import { Menu, type LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type NavItem = { to: string; label: string; icon?: LucideIcon };
@@ -119,49 +117,45 @@ function SidebarRail({
   );
 }
 
-function SidebarList({
+/** Barra inferior de celular: hasta 5 páginas con ícono y nombre corto, siempre visible abajo
+ *  (como una app). Si hay más de 5, se muestran las 5 primeras: el orden de `groups` decide. */
+function BottomBar({
   groups,
   activePath,
   renderLink,
-  onNavigate,
 }: {
   groups: NavGroup[];
   activePath: string;
   renderLink: RenderLink;
-  onNavigate: () => void;
 }) {
+  const items = groups.flatMap((g) => g.items.map((i) => ({ ...i, icon: i.icon ?? g.icon }))).slice(0, 5);
   return (
-    <nav aria-label="Navegación principal" className="flex flex-col gap-5">
-      {groups.map((group) => (
-        <div key={group.label} className="flex flex-col gap-1">
-          <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {group.label}
-          </p>
-          {group.items.map((item) => {
-            const ItemIcon = item.icon ?? group.icon;
-            const active = isActivePath(activePath, item.to);
-            return (
-              <div key={item.to}>
-                {renderLink({
-                  to: item.to,
-                  active,
-                  onClick: onNavigate,
-                  className: cn(
-                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-                    active && LINK_ACTIVE,
-                  ),
-                  children: (
-                    <>
-                      <ItemIcon className="size-4 shrink-0" aria-hidden="true" />
-                      {item.label}
-                    </>
-                  ),
-                })}
-              </div>
-            );
-          })}
-        </div>
-      ))}
+    <nav
+      aria-label="Navegación principal"
+      className="flex shrink-0 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+    >
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active = isActivePath(activePath, item.to);
+        return (
+          <div key={item.to} className="min-w-0 flex-1">
+            {renderLink({
+              to: item.to,
+              active,
+              className: cn(
+                "flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground transition-colors",
+                active && "font-medium text-primary",
+              ),
+              children: (
+                <>
+                  <Icon className="size-5" aria-hidden="true" />
+                  <span className="max-w-full truncate px-1">{item.label}</span>
+                </>
+              ),
+            })}
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -177,49 +171,27 @@ export function AppShell({
   groups: NavGroup[];
   activePath: string;
   renderLink: RenderLink;
-  /** Logo o marca (se ve arriba de la barra lateral y en el panel de celular). */
+  /** Logo o marca (arriba de la barra lateral en escritorio; a la izquierda del encabezado en celular). */
   logo: ReactNode;
   /** Contenido del encabezado: buscador, campana de avisos, menú de la persona… (alineado a la derecha). */
   header?: ReactNode;
   children: ReactNode;
 }) {
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
   return (
-    // Alto fijo a la ventana (h-screen + overflow-hidden): solo <main> hace scroll.
-    <div className="flex h-screen overflow-hidden bg-background">
+    // Alto fijo a la ventana (h-dvh + overflow-hidden): solo <main> hace scroll. dvh y no vh: en el
+    // celular la barra del navegador aparece y desaparece, y con vh la barra inferior quedaba tapada.
+    <div className="flex h-dvh overflow-hidden bg-background">
       {/* Sin overflow aquí: el panel flotante de cada grupo se dibuja fuera de estos 72 px y quedaría recortado. */}
       <aside className="hidden w-[72px] shrink-0 flex-col items-center border-r border-border bg-card py-4 lg:flex">
         <div className="mb-4 flex items-center justify-center">{logo}</div>
         <SidebarRail groups={groups} activePath={activePath} renderLink={renderLink} />
       </aside>
 
-      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent side="left" className="w-64 px-3 py-4">
-          <SheetTitle className="sr-only">Menú</SheetTitle>
-          <div className="mb-4 flex items-center px-1">{logo}</div>
-          <SidebarList
-            groups={groups}
-            activePath={activePath}
-            renderLink={renderLink}
-            onNavigate={() => setMobileNavOpen(false)}
-          />
-        </SheetContent>
-      </Sheet>
-
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="shrink-0 border-b border-border bg-card">
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 lg:hidden"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Abrir menú"
-            >
-              <Menu className="size-5" />
-            </Button>
-            <div className="flex flex-1 flex-wrap items-center justify-end gap-3">{header}</div>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="shrink-0 lg:hidden">{logo}</div>
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-3">{header}</div>
           </div>
         </header>
 
@@ -230,6 +202,9 @@ export function AppShell({
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl px-4 py-6">{children}</div>
         </main>
+
+        {/* En celular (< 1024 px) el menú es una barra inferior, como en la demo (DESIGN_SYSTEM.md). */}
+        <BottomBar groups={groups} activePath={activePath} renderLink={renderLink} />
       </div>
     </div>
   );

@@ -31,6 +31,8 @@ Por decisión de Bernardo ([ADR-0003](adr/0003-construccion-por-modulos.md)) la 
 
 Por decisión de Bernardo ([ADR-0002](adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10) se construye primero la **Etapa 1: app de terreno** (módulos en negrita: Inicio, Tareas, Reportes y Administración). Los demás módulos son **Etapa 2** y se deciden según el uso real. **La demo sigue mostrando la visión completa** y no se recorta. Por eso la línea `sync:modulos` conserva los 10 módulos: es la lista del producto, no la de la etapa.
 
+**MVP de uso** ([ADR-0004](adr/0004-plataforma-y-mvp-de-uso.md)): la app real de la Etapa 1 está en `app/` (Inicio, Tareas con checklist y foto, Reportes y Administración). Por ahora funciona en **modo demo**, con datos guardados en el navegador, hasta que exista el proyecto de Supabase. Las ideas tomadas de apps existentes están en [`docs/referencias/`](referencias/ideas-de-apps-existentes.md).
+
 **Transversal (en la demo):** ingreso con correo y clave más verificación en dos pasos (simulada), registro solo por invitación, recuperación de clave, búsqueda global, notificaciones, indicador En línea / Sin conexión, y «Sugerir un cambio» para recoger ideas del equipo.
 
 ## 2. Roles y qué ve cada uno
@@ -81,4 +83,4 @@ Qué tablas existen y cuáles se planean (nombres provisorios):
 
 - Confirmar el ámbito de acceso: el ADR-0002 asume **organización con áreas** (`org_id`, una sola organización por ahora).
 - Unificar el nombre del rol «Operativo» (aparece en un ejemplo del roadmap) con Técnico.
-- Si DentiHub es herramienta interna o producto para otras empresas.
+- ~~Si DentiHub es herramienta interna o producto para otras empresas~~ Resuelto ([ADR-0004](adr/0004-plataforma-y-mvp-de-uso.md)): herramienta interna de una empresa cliente.

@@ -1,5 +1,7 @@
 # Prompts para Lovable: prototipo navegable de DentiHub
 
+> **Solo referencia (ADR-0004, 11-11-2026):** se decidió no usar Lovable. La app se construye con código propio en `app/` y se despliega en Vercel. Este documento queda como referencia de pantallas y textos.
+
 Objetivo: un prototipo **solo visual y navegable** para mostrar al equipo. Sin base de datos, sin autenticación real, sin Supabase. Todo con datos de ejemplo.
 
 ## Cómo usar este documento

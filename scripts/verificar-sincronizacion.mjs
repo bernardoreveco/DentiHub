@@ -84,6 +84,13 @@ try {
     if (vk && !disenio.includes(vk)) fallos.push(`DESIGN_SYSTEM.md no contiene el valor actual de --${k} del kit (${vk})`);
   }
 
+  // 4b) La app (app/) usa los mismos estilos y roles que el kit (se copió de él; ADR-0004)
+  for (const rel of ["src/styles.css", "src/styles/themes.css", "src/lib/roles.ts", "src/components/AppShell.tsx", "src/components/StatusBadge.tsx"]) {
+    if (!existsSync(join(raiz, "app", rel))) continue;
+    revisiones++;
+    if (leer(`app/${rel}`) !== leer(`starter-kit/${rel}`)) fallos.push(`app/${rel} no coincide con starter-kit/${rel}: aplica el cambio en los dos`);
+  }
+
   // 5) Cada módulo de la demo tiene su pantalla
   revisiones++;
   for (const clave of conjunto(marcaModulos?.[1] ?? "")) {

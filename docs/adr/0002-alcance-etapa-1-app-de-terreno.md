@@ -38,7 +38,7 @@ Se construye primero la **Etapa 1: app de terreno**. El resto pasa a la **Etapa 
 1. **Archivos, documentos, planillas y chat propios son Etapa 2.** Las recomendaciones proponían resolverlos con Google Workspace y guardar solo enlaces. Aquí **no se adopta esa integración**: queda abierto si, mientras tanto, el equipo usa herramientas externas. Razón: dos sistemas de permisos y datos repartidos contradicen la promesa de que cada rol ve solo lo suyo desde un solo lugar.
 2. **Aprobaciones van a la Etapa 2** (no figuran en el alcance recomendado). Es fácil de adelantar si hace falta.
 3. **Multi-tenant con `org_id` desde el día 1, con una sola organización por ahora.** Es barato ahora y caro después. Depende de otra decisión abierta: si DentiHub es herramienta interna o producto para otras empresas.
-4. **Stack del ADR-0001** (TanStack y Vite, no Next.js ni Vercel), aunque las recomendaciones asumían Next.js.
+4. **Stack del ADR-0001** (TanStack y Vite, no Next.js), aunque las recomendaciones asumían Next.js. El despliegue es en **Vercel** desde el ADR-0004.
 5. **Offline:** la Etapa 1 deja la base preparada (identificadores creados en el cliente y escrituras idempotentes) y muestra el indicador En línea / Sin conexión; la cola de salida completa es Etapa 2.
 
 ## Ajustes adoptados desde las recomendaciones
@@ -67,12 +67,12 @@ Se construye primero la **Etapa 1: app de terreno**. El resto pasa a la **Etapa 
 
 ## Preguntas abiertas (decide Bernardo)
 
-1. ¿DentiHub es una herramienta interna o un producto para otras empresas? (Confirma el supuesto 3.)
+1. ~~¿DentiHub es una herramienta interna o un producto para otras empresas?~~ **Resuelto en el [ADR-0004](0004-plataforma-y-mvp-de-uso.md):** herramienta interna de una empresa cliente. Se mantiene `org_id` (una sola organización).
 2. ¿Qué dispositivos usan los técnicos, cuántas personas y cuántas fotos por día se esperan?
 3. ¿Quién es el dueño de las cuentas (Supabase, dominio, correo) y quién administra la plataforma?
 4. ¿El equipo maneja datos personales o sensibles de clientes?
 5. ¿Se hace la prueba rápida sin programar antes de construir?
-6. ¿Se usa Lovable para construir o se desarrolla directo en el repositorio?
+6. ~~¿Se usa Lovable para construir o se desarrolla directo en el repositorio?~~ **Resuelto en el ADR-0004:** código propio en `app/`, desplegado en Vercel.
 7. **Auditoría y privacidad:** la auditoría de `profiles` no guarda nombre ni correo, así que un cambio de nombre queda sin valor anterior y nuevo (el criterio 4 se cumple para tareas y roles, no para esos campos). ¿Se acepta, o se guarda un hash o un indicador de cambio? Falta además definir la retención del registro.
 8. **Borrado de datos personales:** las cuentas con historial no se pueden borrar (claves foráneas `RESTRICT` y auditoría inmutable); se desactivan. Si llega una solicitud de eliminación de datos, hace falta un procedimiento (anonimizar, no borrar).
 9. **Cierre de sesión al desactivar una cuenta:** la base corta el acceso a datos de inmediato, pero el token y las URLs firmadas ya emitidas siguen vivos hasta que venzan. ¿Se agrega bloqueo en Authentication o una función de servidor?

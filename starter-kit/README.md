@@ -16,6 +16,10 @@ El pedido original suponía Next.js y Vercel. **Dentiventario no usa ninguno de 
 
 Los componentes del kit son React + Tailwind + Radix **sin dependencia del enrutador**, así que sirven igual en Next.js o en TanStack. Si usas Next.js (App Router), agrega `"use client"` al inicio de los que usan estado o Radix y no lo traen (`AppShell`, `tabs`, `Section`, `FilterPills`, entre otros). El prompt de Lovable de DentiHub ya pide React + Tailwind + shadcn/ui, que es este mismo stack.
 
+## Dónde se usa
+
+Desde el [ADR-0004](../docs/adr/0004-plataforma-y-mvp-de-uso.md) la app real vive en `../app/`, que copió `src/` de este kit. **Un cambio de diseño se hace en los dos lugares** (AGENTE.md §8) y el verificador comprueba que los estilos y los roles de ambos coincidan. DentiHub se despliega en **Vercel** (no Cloudflare como Dentiventario).
+
 ## Cómo usarlo
 
 1. Copia `src/` a tu proyecto nuevo (respeta las rutas: el alias `@/` apunta a `src/`; ver `tsconfig.json`).

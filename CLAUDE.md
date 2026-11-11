@@ -7,6 +7,7 @@ Roadmap de 8 fases: `C:\Users\berna\Downloads\Roadmap DentiHub.xlsx` (todo en 0%
 
 ## Estado actual
 - Existe una **demo navegable** en `DentiHub-Modelo-Visual.html`: un solo archivo, con datos de ejemplo, sin base de datos ni autenticación real. Todos los módulos se pueden abrir y usar; nada se guarda al recargar. **Ya aplica el sistema de diseño** (Inter, barra lateral de 72 px con paneles, tarjetas de cifra, tablas con etiquetas de estado); su lógica no cambió.
+- **MVP de uso en `app/`** ([ADR-0004](docs/adr/0004-plataforma-y-mvp-de-uso.md)): app real de la Etapa 1 (React 19 + Vite + TanStack Router y Query + Tailwind v4 + kit). Hoy corre en **modo demo** (datos en el navegador); la fuente Supabase está pendiente. Se ve con `npm --prefix app install` y `npm --prefix app run dev` (http://localhost:5173). Ideas de apps existentes: `docs/referencias/ideas-de-apps-existentes.md`.
 - **Base del producto** (módulos, roles, flujos y datos): `docs/BASE-DEL-PRODUCTO.md`. Verificador de desfases: `node scripts/verificar-sincronizacion.mjs`.
 - `DentiHub Modelo Visual.html` es una versión antigua, solo como histórico.
 - `Prompts-Lovable-Prototipo-DentiHub.md` tiene el prompt maestro y los prompts por módulo para construir el prototipo en Lovable, sin backend.
@@ -17,10 +18,10 @@ Roadmap de 8 fases: `C:\Users\berna\Downloads\Roadmap DentiHub.xlsx` (todo en 0%
 - Primero un **prototipo navegable sin base de datos** para socializar con el equipo; el backend solo después de aprobarlo.
 - **Alcance de construcción: Etapa 1 acotada = app de terreno** ([ADR-0002](docs/adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10): ingreso por invitación, roles y áreas, tareas con checklist y foto de evidencia obligatoria, alertas, reportes simples y auditoría. Archivos, mensajes, documentos, wiki, planillas, aprobaciones y el modo sin conexión completo son **Etapa 2**. La demo sigue mostrando la visión completa. Se asume multi-organización (`org_id`) con una sola organización por ahora.
 - **Se construye por módulos que se conectan por contratos** ([ADR-0003](docs/adr/0003-construccion-por-modulos.md)): 1) Acceso (Supabase Auth certifica persona, cuenta y habilitación; entrega el «contexto de acceso»), 2) Administración, 3) Operación, 4) Reportes y alertas; notificaciones y auditoría son transversales. Cada módulo tiene su documento en `docs/modulos/` con **un flujo por pantalla**.
-- Backend recomendado para producción: **Supabase Pro** (roles con permisos por fila, auditoría, archivos en el mismo proveedor). Pendiente de decidir tras el prototipo.
+- **Plataforma decidida** ([ADR-0004](docs/adr/0004-plataforma-y-mvp-de-uso.md), 2026-11-11): **Supabase + GitHub + Vercel**, código propio (sin Lovable). DentiHub es una **herramienta interna de una empresa cliente** (una sola organización). Siguiente entregable: el **MVP de uso**, tomando ideas de apps existentes. Plan de Supabase (Free o Pro) y dueño de las cuentas: pendientes.
 - La edición simultánea en tiempo real y el modo sin conexión son lo más riesgoso; en el prototipo solo se simulan.
 - Diseñar permisos y auditoría desde la fase 1, no al final.
-- **Stack de referencia = el de Dentiventario, no Next.js:** React 19 + Vite, TanStack Start/Router y Query, Tailwind v4, shadcn/ui (Radix) y Supabase. Dentiventario se edita con Lovable y se despliega en Cloudflare (no Vercel). Pendiente confirmar si DentiHub usa Lovable y dónde se despliega.
+- **Stack de referencia = el de Dentiventario, no Next.js:** React 19 + Vite, TanStack Start/Router y Query, Tailwind v4, shadcn/ui (Radix) y Supabase. Dentiventario se edita con Lovable y se despliega en Cloudflare; **DentiHub no usa Lovable y se despliega en Vercel** como SPA (ADR-0004).
 
 ## Cómo trabajar (instrucción del usuario)
 Actuar como ingeniero senior, sin adivinar:
@@ -53,6 +54,7 @@ Léelo al empezar: [`AGENTE.md`](AGENTE.md). Resumen: respondes solo a Bernardo;
 
 ## Código (convenciones tomadas de Dentiventario)
 - TypeScript estricto (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`). Prettier: 100 columnas, comillas dobles, punto y coma, coma final.
+- La app vive en `app/` (su `src/` partió como copia del kit). Las pantallas solo hablan con `app/src/datos/fuente.ts`, nunca directo con Supabase.
 - Alias `@/` → `src/`. Componentes en `src/components` (la base de shadcn en `components/ui`), hooks de datos y reglas puras en `src/lib`, una ruta por archivo en `src/routes`.
 - Datos: un hook por consulta con TanStack Query (`useX`), llave de caché estable, y `if (error) throw error`. Las escrituras de varios pasos **no** se hacen como varias llamadas del navegador: van en una función de base de datos transaccional.
 - Archivos pequeños: una pantalla no pasa de unos cientos de líneas; partir por funcionalidad desde el inicio (Dentiventario tiene pantallas de 2.000 a 3.500 líneas que no hay que repetir).
@@ -72,5 +74,6 @@ Léelo al empezar: [`AGENTE.md`](AGENTE.md). Resumen: respondes solo a Bernardo;
 2. Pegar los prompts en Lovable y revisar el resultado con el equipo.
 3. ~~Crear el Git nuevo y subir esta carpeta~~ (hecho: `bernardoreveco/DentiHub`). Queda decidir si `DentiHub-Modelo-Visual.html` y la carpeta duplicada `DentiHub/DentiHub/` se mantienen.
 4. **Dentiventario** (inventario `image-inv-wiz`, con un problema de aislamiento en la sucursal de testeo) es **otro proyecto**, que no está en esta carpeta. Solo se leyó para extraer el kit; no se modificó.
-5. Decidir: confirmar el ámbito de acceso (el ADR-0002 asume organización con áreas; en Dentiventario es la sucursal), si DentiHub es herramienta interna o producto para otras empresas, uso de Lovable, dónde se despliega, cómo se aplican las migraciones, y si las tablas serán más densas que las de Dentiventario (filas de 44 px).
+5. Decidir: confirmar el ámbito de acceso (el ADR-0002 asume organización con áreas), quién es dueño de las cuentas de Supabase y Vercel (Dentimagen o la empresa cliente), cómo se aplican las migraciones, y si las tablas serán más densas que las de Dentiventario (filas de 44 px). Ya resuelto: herramienta interna, sin Lovable, Vercel (ADR-0004).
+7. **MVP:** crear el proyecto de Supabase de desarrollo, preparar `mi_acceso()` y la fuente `supabase` de `app/src/datos/`, generar tipos, función de invitación y proyecto de Vercel (carpeta raíz `app`).
 6. Kit pendiente de una segunda pasada: pantallas de acceso e invitación de usuarios (`auth`, `invitations.functions.ts`), que no se revisaron a fondo.
