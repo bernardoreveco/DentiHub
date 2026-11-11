@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Módulo 3: Operación (tareas, checklist y evidencia)</title>
+<!-- Generado desde el .md del mismo nombre con scripts/generar-html-diagramas.mjs: no editar a mano.
+     Necesita internet para dibujar los diagramas (carga Mermaid). -->
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--fg:#1f2937;--muted:#5b6472;--line:#e3e6ea;--link:#0077a9}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141a;--card:#161c24;--fg:#e8ecf1;--muted:#9aa4b2;--line:#273140;--link:#5cc3ee}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 Inter,system-ui,sans-serif;padding:16px}
+main{max-width:1000px;margin:0 auto}
+h1{font-size:22px;margin:8px 0 12px}h2{font-size:18px;margin:28px 0 8px}h3{font-size:16px;margin:20px 0 6px}
+p,li{color:var(--muted)}p{margin:6px 0}ul,ol{padding-left:22px;margin:6px 0}
+a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;overflow-x:auto}
+.card .mermaid{margin:0;text-align:center;background:#fff;border-radius:8px;padding:8px}
+.card svg{max-width:100%;height:auto}
+</style>
+</head>
+<body><main>
+<h1>Módulo 3: Operación (tareas, checklist y evidencia)</h1>
+<p><strong>Qué resuelve:</strong> el trabajo de terreno de la Etapa 1. El Gestor crea y asigna tareas con su checklist; el Técnico las hace desde el celular, marca los pasos, toma la foto de evidencia y la cierra. <strong>Consume</strong> el contexto de acceso del <a href="01-acceso.html">módulo Acceso</a> y las personas habilitadas del módulo Administración.</p>
+<p><strong>Reglas que no se negocian</strong></p>
+<ul>
+<li>El Técnico ve y trabaja <strong>solo sus tareas</strong>; Gestor y Administrador ven todas las de su organización.</li>
+<li>Una tarea <strong>no se cierra</strong> sin todos los pasos obligatorios y sin la foto cuando la plantilla la exige. Lo impone la base de datos (<code>complete_task</code>), no solo la pantalla.</li>
+<li>El estado de una tarea solo cambia con las funciones de tareas; nadie lo edita directo.</li>
+<li>Una plantilla no se edita: se publica una versión nueva. Las tareas abiertas siguen con su versión.</li>
+</ul>
+<p><strong>Pantallas:</strong> O1 Mis tareas · O2 Detalle de tarea · O3 Checklist · O4 Foto de evidencia · O5 Completar tarea · O6 Crear o asignar tarea (Gestor) · O7 Plantillas (Gestor) · O8 Cancelar tarea (Gestor).</p>
+<p>Leyenda de los flujos: verde = inicio o fin, amarillo = paso, celeste = decisión, rojo = error o bloqueo.</p>
+<h2>O1. Mis tareas</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    l1([Abre Tareas]):::ini
+    l2{¿Qué rol tiene?}:::dec
+    l3[Lista solo sus tareas:&lt;br/&gt;pendientes y en curso arriba,&lt;br/&gt;urgentes marcadas]:::paso
+    l4[Lista todas las de su organización&lt;br/&gt;con filtros por persona, área y estado]:::paso
+    l5{¿Hay tareas?}:::dec
+    l6[Pulsa una tarea]:::paso
+    e1[Estado vacío:&lt;br/&gt;no tienes tareas por ahora]:::paso
+    o2([O2 Detalle de tarea]):::ini
+    o6([O6 Crear tarea]):::ini
+
+    l1 --&gt; l2
+    l2 -- Técnico --&gt; l3
+    l2 -- Gestor o Administrador --&gt; l4
+    l3 --&gt; l5
+    l4 --&gt; l5
+    l5 -- No --&gt; e1
+    l5 -- Sí --&gt; l6 --&gt; o2
+    l4 -. Nueva tarea .-&gt; o6</pre></div>
+<h2>O2. Detalle de tarea</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    d1([Abre una tarea]):::ini
+    d2{¿Puede verla?&lt;br/&gt;la base solo la entrega&lt;br/&gt;si es suya o si es Gestor}:::dec
+    d3[Muestra título, área, fecha,&lt;br/&gt;estado, pasos y fotos]:::paso
+    d4{¿Está cerrada?&lt;br/&gt;completada o cancelada}:::dec
+    d5[Solo lectura]:::paso
+    d6{¿Es la persona asignada?}:::dec
+    e1[No encontrada o sin acceso]:::no
+    o3([O3 Checklist]):::ini
+    o4([O4 Foto de evidencia]):::ini
+    o8([O8 Cancelar, solo Gestor]):::ini
+
+    d1 --&gt; d2
+    d2 -- No --&gt; e1
+    d2 -- Sí --&gt; d3 --&gt; d4
+    d4 -- Sí --&gt; d5
+    d4 -- No --&gt; d6
+    d6 -- Sí --&gt; o3
+    d6 -- Sí --&gt; o4
+    d6 -- No, es Gestor --&gt; o8</pre></div>
+<h2>O3. Checklist</h2>
+<p>Cada cambio se guarda con <code>save_task_progress</code>. La primera respuesta pasa la tarea de <strong>Pendiente</strong> a <strong>En curso</strong>.</p>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    k1([Marca un paso o escribe una respuesta]):::ini
+    k2{¿Hay conexión?}:::dec
+    k3[Guarda el avance]:::paso
+    k4{¿La base lo aceptó?}:::dec
+    k5[Marca el paso como guardado]:::paso
+    k6{¿Quedan pasos obligatorios?}:::dec
+    e1[Etapa 1: avisa que no hay señal&lt;br/&gt;y no pierde lo escrito en pantalla.&lt;br/&gt;La cola sin conexión es Etapa 2]:::no
+    e2[Muestra el motivo:&lt;br/&gt;respuesta muy larga o paso inexistente]:::no
+    o5([O5 Completar tarea]):::ini
+
+    k1 --&gt; k2
+    k2 -- No --&gt; e1
+    k2 -- Sí --&gt; k3 --&gt; k4
+    k4 -- No --&gt; e2
+    k4 -- Sí --&gt; k5 --&gt; k6
+    k6 -- Sí --&gt; k1
+    k6 -- No --&gt; o5</pre></div>
+<h2>O4. Foto de evidencia</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    f1([Pulsa Tomar foto]):::ini
+    f2[Abre la cámara del celular]:::paso
+    f3[Comprime la imagen en el celular]:::paso
+    f4[Sube el archivo a Storage, en la&lt;br/&gt;carpeta de su organización y su tarea]:::paso
+    f5{¿Storage lo aceptó?&lt;br/&gt;tipo, tamaño y tope por tarea}:::dec
+    f6[Registra la foto con register_evidence]:::paso
+    f7{¿La base la aceptó?&lt;br/&gt;tamaño mínimo, tipo de imagen,&lt;br/&gt;no repetida}:::dec
+    f8([La foto aparece en la tarea]):::ini
+    e1[Muestra el motivo y permite&lt;br/&gt;tomar otra foto]:::no
+
+    f1 --&gt; f2 --&gt; f3 --&gt; f4 --&gt; f5
+    f5 -- No --&gt; e1 --&gt; f1
+    f5 -- Sí --&gt; f6 --&gt; f7
+    f7 -- No --&gt; e1
+    f7 -- Sí --&gt; f8</pre></div>
+<p>Reintentar la misma subida no duplica la foto: cada una lleva un identificador creado en el celular.</p>
+<h2>O5. Completar tarea</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    c1([Pulsa Completar]):::ini
+    c2[La base revisa con complete_task]:::paso
+    c3{¿Todos los pasos obligatorios&lt;br/&gt;respondidos?}:::dec
+    c4{¿Tiene la foto que exige&lt;br/&gt;la plantilla?}:::dec
+    c5[La tarea queda Completada&lt;br/&gt;con fecha y persona]:::paso
+    c6[Queda en la auditoría&lt;br/&gt;y se avisa al Gestor]:::paso
+    c7([Vuelve a O1 con la tarea cerrada]):::ini
+    e1[Bloqueado: indica qué pasos faltan]:::no
+    e2[Bloqueado: falta la foto de evidencia]:::no
+    o3([O3 Checklist]):::ini
+    o4([O4 Foto de evidencia]):::ini
+
+    c1 --&gt; c2 --&gt; c3
+    c3 -- No --&gt; e1 --&gt; o3
+    c3 -- Sí --&gt; c4
+    c4 -- No --&gt; e2 --&gt; o4
+    c4 -- Sí --&gt; c5 --&gt; c6 --&gt; c7</pre></div>
+<h2>O6. Crear o asignar tarea (Gestor)</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    t1([Pulsa Nueva tarea]):::ini
+    t2[Elige plantilla vigente, título,&lt;br/&gt;área, persona y fecha]:::paso
+    t3{¿Es recurrente?}:::dec
+    t4[Define la frecuencia.&lt;br/&gt;La base crea cada tarea sola]:::paso
+    t5[Guarda la tarea en Pendiente]:::paso
+    t6{¿La base la aceptó?&lt;br/&gt;persona activa de su organización,&lt;br/&gt;plantilla y área vigentes}:::dec
+    t7[Se avisa al Técnico asignado]:::paso
+    t8([La tarea aparece en O1]):::ini
+    e1[Muestra el motivo&lt;br/&gt;y deja corregir]:::no
+
+    t1 --&gt; t2 --&gt; t3
+    t3 -- Sí --&gt; t4 --&gt; t6
+    t3 -- No --&gt; t5 --&gt; t6
+    t6 -- No --&gt; e1 --&gt; t2
+    t6 -- Sí --&gt; t7 --&gt; t8</pre></div>
+<h2>O7. Plantillas (Gestor)</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    p1([Abre Plantillas]):::ini
+    p2{¿Nueva o cambio de una existente?}:::dec
+    p3[Define pasos, cuáles son&lt;br/&gt;obligatorios y si exige foto]:::paso
+    p4[Publica con create_form_template]:::paso
+    p5{¿Estructura válida?}:::dec
+    p6[Queda vigente. La versión anterior&lt;br/&gt;pasa a inactiva y no se puede reactivar]:::paso
+    p7([Las tareas nuevas y las recurrentes&lt;br/&gt;usan la versión vigente; las abiertas&lt;br/&gt;siguen con la suya]):::ini
+    e1[Muestra qué está mal]:::no
+
+    p1 --&gt; p2
+    p2 -- Nueva --&gt; p3
+    p2 -- Cambio --&gt; p3
+    p3 --&gt; p4 --&gt; p5
+    p5 -- No --&gt; e1 --&gt; p3
+    p5 -- Sí --&gt; p6 --&gt; p7</pre></div>
+<h2>O8. Cancelar tarea (Gestor)</h2>
+<div class="card"><pre class="mermaid">flowchart LR
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    x1([Pulsa Cancelar tarea]):::ini
+    x2[Escribe el motivo]:::paso
+    x3{¿La tarea está abierta?}:::dec
+    x4[Queda Cancelada con el motivo&lt;br/&gt;y en la auditoría]:::paso
+    x5([Se avisa al Técnico]):::ini
+    e1[Ya está cerrada:&lt;br/&gt;no se puede cancelar]:::no
+
+    x1 --&gt; x2 --&gt; x3
+    x3 -- No --&gt; e1
+    x3 -- Sí --&gt; x4 --&gt; x5</pre></div>
+<h2>Datos y funciones que usa</h2>
+<p>Migraciones de la Etapa 1, escritas y <strong>sin aplicar</strong>: <code>form_templates</code>, <code>task_definitions</code>, <code>tasks</code>, <code>task_evidence</code>, bucket privado <code>evidence</code>; funciones <code>create_form_template</code>, <code>save_task_progress</code>, <code>register_evidence</code>, <code>complete_task</code>, <code>cancel_task</code>, <code>generate_recurring_tasks</code>. Los avisos al Técnico y al Gestor dependen del módulo transversal de notificaciones, <strong>por diseñar</strong>.</p>
+<h2>Terminado cuando</h2>
+<ol>
+<li>El Gestor asigna un checklist recurrente y la tarea aparece sola cada día.</li>
+<li>El Técnico la completa con foto desde el celular; sin foto o sin pasos, no se cierra, <strong>ni llamando a la API directamente</strong>.</li>
+<li>Un Técnico no ve ni abre tareas o fotos de otra persona.</li>
+<li>Todo cambio de estado queda en la auditoría.</li>
+</ol>
+<h2>Decisiones abiertas</h2>
+<ul>
+<li>Cuántas fotos exige cada plantilla por defecto (hoy: lo define cada plantilla).</li>
+<li>Si el Gestor puede completar una tarea en nombre del Técnico (las migraciones lo permiten; la foto solo la sube el asignado).</li>
+<li>Reabrir una tarea cerrada (hoy no existe).</li>
+</ul>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:"default",securityLevel:"strict",flowchart:{htmlLabels:true,useMaxWidth:true}});</script>
+</body>
+</html>

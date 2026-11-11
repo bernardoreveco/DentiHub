@@ -74,8 +74,8 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 |---|---|
 | **Diseño** (color, tipografía, tamaño, componente) | `starter-kit/src/styles.css` y `themes.css` → `DESIGN_SYSTEM.md` → `DESIGN_SYSTEM.html` → componentes del kit → la demo (su bloque de colores y sus clases) |
 | **Un módulo o pantalla** (nuevo, quitado o renombrado) | `docs/BASE-DEL-PRODUCTO.md` (tabla y línea `sync:modulos`) → la demo (menú, pantalla y datos de ejemplo) → `Prompts-Lovable-Prototipo-DentiHub.md` → `CLAUDE.md` si cambia el alcance → ADR de fases → landing, si existe |
-| **Un rol o un permiso** | `docs/BASE-DEL-PRODUCTO.md` (matriz y línea `sync:roles`) → `starter-kit/src/lib/roles.ts` → **migración SQL** (enum, RLS, políticas) → la demo (selector de rol y lo que ve cada rol) → `CLAUDE.md` y este archivo → pruebas de RLS |
-| **Un flujo** (aprobar, completar tarea, invitar…) | `docs/BASE-DEL-PRODUCTO.md` (sección de flujos) → la demo → prompts de Lovable → función o migración de base de datos → ADR o roadmap |
+| **Un rol o un permiso** | `docs/BASE-DEL-PRODUCTO.md` (matriz y línea `sync:roles`) → `docs/diagramas/permisos-por-rol.md` (y su HTML) → `starter-kit/src/lib/roles.ts` → **migración SQL** (enum, RLS, políticas) → la demo (selector de rol y lo que ve cada rol) → `CLAUDE.md` y este archivo → pruebas de RLS |
+| **Un flujo** (aprobar, completar tarea, invitar…) | `docs/BASE-DEL-PRODUCTO.md` (sección de flujos) → el documento del módulo en `docs/modulos/` (flujo de la pantalla) y `docs/diagramas/` → la demo → prompts de Lovable → función o migración de base de datos → ADR o roadmap |
 | **Datos** (tabla o columna) | **Migración con reversa** → tipos de Supabase → `docs/BASE-DEL-PRODUCTO.md` (sección de datos) → datos de ejemplo de la demo |
 | **Arquitectura, stack o dominio** | ADR nuevo o actualizado → `CLAUDE.md` («Decisiones tomadas») → este archivo si cambian límites |
 | **Reglas del agente** | Este archivo (subir la versión) → `.claude/agents/` si afecta a algún agente del equipo (§12) → resumen en `CLAUDE.md` |

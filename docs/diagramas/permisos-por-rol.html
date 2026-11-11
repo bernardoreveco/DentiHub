@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagramas de flujo: permisos por rol</title>
+<!-- Generado desde el .md del mismo nombre con scripts/generar-html-diagramas.mjs: no editar a mano.
+     Necesita internet para dibujar los diagramas (carga Mermaid). -->
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--fg:#1f2937;--muted:#5b6472;--line:#e3e6ea;--link:#0077a9}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141a;--card:#161c24;--fg:#e8ecf1;--muted:#9aa4b2;--line:#273140;--link:#5cc3ee}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 Inter,system-ui,sans-serif;padding:16px}
+main{max-width:1000px;margin:0 auto}
+h1{font-size:22px;margin:8px 0 12px}h2{font-size:18px;margin:28px 0 8px}h3{font-size:16px;margin:20px 0 6px}
+p,li{color:var(--muted)}p{margin:6px 0}ul,ol{padding-left:22px;margin:6px 0}
+a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;overflow-x:auto}
+.card .mermaid{margin:0;text-align:center;background:#fff;border-radius:8px;padding:8px}
+.card svg{max-width:100%;height:auto}
+</style>
+</head>
+<body><main>
+<h1>Diagramas de flujo: permisos por rol</h1>
+<p>Fuente: <code>docs/BASE-DEL-PRODUCTO.md</code> (sección 2, roles) y las migraciones de la Etapa 1 (<code>starter-kit/supabase/migrations/</code>, <strong>escritas, aún no aplicadas</strong>). Si cambia un rol o un permiso, se actualiza primero la base y después este archivo (<code>AGENTE.md</code>, sección 8). La versión para ver en el navegador o el teléfono es <code>permisos-por-rol.html</code>, generada desde este archivo.</p>
+<p>Leyenda: verde = inicio o fin, amarillo = paso, celeste = decisión, rojo = sin acceso.</p>
+<h2>1. Entrar a la app y resolver el rol</h2>
+<p>Fail-closed: ante cualquier duda, la persona queda <strong>sin acceso</strong>.</p>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    a1([La persona ingresa con correo y clave]):::ini
+    a2[Verificación en dos pasos&lt;br/&gt;simulada en la demo]:::paso
+    a3{¿La cuenta está activa?}:::dec
+    a4{¿Tiene organización asignada?}:::dec
+    a5{¿Tiene un rol válido?&lt;br/&gt;admin, gestor o tecnico}:::dec
+    a6[Se carga el menú de su rol]:::paso
+    a7([Entra a Inicio]):::ini
+    x1[Sin acceso:&lt;br/&gt;cuenta desactivada]:::no
+    x2[Sin acceso:&lt;br/&gt;espera que el Administrador&lt;br/&gt;le asigne organización]:::no
+    x3[Sin acceso:&lt;br/&gt;rol desconocido o sin rol]:::no
+
+    a1 --&gt; a2 --&gt; a3
+    a3 -- No --&gt; x1
+    a3 -- Sí --&gt; a4
+    a4 -- No --&gt; x2
+    a4 -- Sí --&gt; a5
+    a5 -- No --&gt; x3
+    a5 -- Sí --&gt; a6 --&gt; a7</pre></div>
+<h2>2. Qué módulos ve cada rol</h2>
+<p>Administrador: 10 módulos. Gestor: 9. Técnico: 8. Los marcados con <strong>E1</strong> son de la Etapa 1 (ADR-0002); el resto es Etapa 2.</p>
+<div class="card"><pre class="mermaid">flowchart LR
+    classDef rol fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef mod fill:#FFE86D,stroke:#A28E26,color:#574900
+
+    adm([Administrador]):::rol
+    ges([Gestor]):::rol
+    tec([Técnico]):::rol
+
+    subgraph todos [Todos los roles]
+        m1[Inicio E1]:::mod
+        m2[Tareas E1]:::mod
+        m3[Mensajes]:::mod
+        m4[Archivos]:::mod
+        m5[Documentos]:::mod
+        m6[Wiki]:::mod
+        m7[Planillas]:::mod
+        m8[Aprobaciones]:::mod
+    end
+    subgraph gestion [Gestor y Administrador]
+        m9[Reportes E1]:::mod
+    end
+    subgraph soloadm [Solo Administrador]
+        m10[Administración E1&lt;br/&gt;usuarios, áreas y auditoría]:::mod
+    end
+
+    adm --&gt; todos
+    adm --&gt; gestion
+    adm --&gt; soloadm
+    ges --&gt; todos
+    ges --&gt; gestion
+    tec --&gt; todos</pre></div>
+<h2>3. Qué cambia dentro de cada módulo según el rol</h2>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    r0([La persona abre un módulo]):::ini
+    r1{¿Qué rol tiene?}:::dec
+
+    g1[Administrador y Gestor:&lt;br/&gt;ven todas las tareas y aprobaciones&lt;br/&gt;de su organización, aprueban y rechazan,&lt;br/&gt;ven la carpeta Finanzas, editan la columna Costo,&lt;br/&gt;publican en el canal de urgencias y gestionan alertas]:::paso
+    g2[Solo el Administrador:&lt;br/&gt;invita personas, asigna rol, organización y áreas,&lt;br/&gt;activa o desactiva cuentas y lee la auditoría]:::paso
+
+    t1[Técnico: ve solo sus tareas&lt;br/&gt;y solo sus solicitudes]:::paso
+    t2[Técnico: crea solicitudes,&lt;br/&gt;pero no aprueba]:::paso
+    t3[Técnico: no ve la carpeta Finanzas]:::no
+    t4[Técnico: la columna Costo&lt;br/&gt;está restringida]:::no
+    t5[Técnico: no publica en el&lt;br/&gt;canal cerrado de urgencias]:::no
+    t6[Técnico: sus alertas&lt;br/&gt;las gestiona su Gestor]:::paso
+
+    r0 --&gt; r1
+    r1 -- Administrador --&gt; g1
+    r1 -- Administrador --&gt; g2
+    r1 -- Gestor --&gt; g1
+    r1 -- Técnico --&gt; t1
+    t1 --&gt; t2 --&gt; t3 --&gt; t4 --&gt; t5 --&gt; t6</pre></div>
+<h2>4. Las tres capas que deciden un acceso</h2>
+<p>Solo la base de datos (RLS) cuenta como seguridad: las otras dos capas ordenan lo que se muestra.</p>
+<div class="card"><pre class="mermaid">flowchart LR
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    c1([Pide una página o un dato]):::ini
+    c2{Capa 3, interfaz:&lt;br/&gt;canAccessPage&lt;br/&gt;¿su rol ve esta página?}:::dec
+    c3{Capa 2, permisos de página&lt;br/&gt;que define el Administrador:&lt;br/&gt;¿está habilitada?}:::dec
+    c4{Capa 1, base de datos RLS:&lt;br/&gt;¿la fila es de su organización&lt;br/&gt;y le corresponde?}:::dec
+    c5([Ve solo lo que le corresponde]):::ini
+    x1[Se oculta el menú&lt;br/&gt;y se muestra Sin acceso]:::no
+    x2[Sin acceso a la página]:::no
+    x3[La base no devuelve la fila,&lt;br/&gt;ni llamando a la API directamente]:::no
+
+    c1 --&gt; c2
+    c2 -- No --&gt; x1
+    c2 -- Sí --&gt; c3
+    c3 -- No --&gt; x2
+    c3 -- Sí --&gt; c4
+    c4 -- No --&gt; x3
+    c4 -- Sí --&gt; c5</pre></div>
+<h2>5. El Administrador asigna o cambia un rol</h2>
+<p>Así funciona la función <code>admin_assign_member</code> de la Etapa 1. Una persona tiene <strong>un solo</strong> rol; cambiarlo actualiza su fila.</p>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    s1([El Administrador elige a la persona,&lt;br/&gt;su rol, organización y áreas]):::ini
+    s2{¿Quien lo pide es&lt;br/&gt;administrador activo?}:::dec
+    s3{¿La organización es la suya?}:::dec
+    s4{¿La persona existe y está&lt;br/&gt;sin organización o en la suya?}:::dec
+    s5{¿Las áreas son de esa organización?}:::dec
+    s6{¿Le quita el rol de administrador&lt;br/&gt;a la última persona administradora?}:::dec
+    s7[Se guardan rol, organización y áreas&lt;br/&gt;en una sola operación]:::paso
+    s8[Queda en la auditoría]:::paso
+    s9([La persona entra con su nuevo rol]):::ini
+    x1[Rechazado]:::no
+    x2[Rechazado: el sistema&lt;br/&gt;quedaría sin administrador]:::no
+
+    s1 --&gt; s2
+    s2 -- No --&gt; x1
+    s2 -- Sí --&gt; s3
+    s3 -- No --&gt; x1
+    s3 -- Sí --&gt; s4
+    s4 -- No --&gt; x1
+    s4 -- Sí --&gt; s5
+    s5 -- No --&gt; x1
+    s5 -- Sí --&gt; s6
+    s6 -- Sí --&gt; x2
+    s6 -- No --&gt; s7 --&gt; s8 --&gt; s9</pre></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:"default",securityLevel:"strict",flowchart:{htmlLabels:true,useMaxWidth:true}});</script>
+</body>
+</html>

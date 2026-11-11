@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Módulos de DentiHub y cómo se conectan</title>
+<!-- Generado desde el .md del mismo nombre con scripts/generar-html-diagramas.mjs: no editar a mano.
+     Necesita internet para dibujar los diagramas (carga Mermaid). -->
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--fg:#1f2937;--muted:#5b6472;--line:#e3e6ea;--link:#0077a9}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141a;--card:#161c24;--fg:#e8ecf1;--muted:#9aa4b2;--line:#273140;--link:#5cc3ee}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 Inter,system-ui,sans-serif;padding:16px}
+main{max-width:1000px;margin:0 auto}
+h1{font-size:22px;margin:8px 0 12px}h2{font-size:18px;margin:28px 0 8px}h3{font-size:16px;margin:20px 0 6px}
+p,li{color:var(--muted)}p{margin:6px 0}ul,ol{padding-left:22px;margin:6px 0}
+a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;overflow-x:auto}
+.card .mermaid{margin:0;text-align:center;background:#fff;border-radius:8px;padding:8px}
+.card svg{max-width:100%;height:auto}
+</style>
+</head>
+<body><main>
+<h1>Módulos de DentiHub y cómo se conectan</h1>
+<p>Decisión: ADR-0003. Alcance: Etapa 1, app de terreno (ADR-0002).</p>
+<p>Cada módulo se diseña, construye y prueba por separado, y cada pantalla tiene su propio flujo. Los módulos solo se hablan a través de <strong>contratos</strong> (qué entrega cada uno y qué consume), nunca leyendo las tablas internas de otro.</p>
+<h2>Mapa</h2>
+<div class="card"><pre class="mermaid">flowchart LR
+    classDef mod fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef trans fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef base fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+
+    sb[(Supabase:&lt;br/&gt;Auth, base de datos&lt;br/&gt;con RLS y Storage)]:::base
+    m1[1. Acceso&lt;br/&gt;certifica persona,&lt;br/&gt;cuenta y habilitación]:::mod
+    m2[2. Administración&lt;br/&gt;rol, organización,&lt;br/&gt;áreas y cuentas]:::mod
+    m3[3. Operación&lt;br/&gt;tareas, checklist&lt;br/&gt;y evidencia]:::mod
+    m4[4. Reportes y alertas]:::mod
+    t1[Notificaciones]:::trans
+    t2[Auditoría]:::trans
+
+    sb --&gt; m1
+    m1 -- contexto de acceso --&gt; m2
+    m1 -- contexto de acceso --&gt; m3
+    m1 -- contexto de acceso --&gt; m4
+    m2 -- personas habilitadas,&lt;br/&gt;áreas --&gt; m3
+    m3 -- tareas y evidencia --&gt; m4
+    m3 --&gt; t1
+    m4 --&gt; t1
+    m2 --&gt; t2
+    m3 --&gt; t2</pre></div>
+<h2>Módulos</h2>
+<ul>
+<li><strong>1. Acceso</strong> · <a href="01-acceso.html">01-acceso.md</a> · Ingreso, verificación en dos pasos, recuperar clave, aceptar invitación y pantallas de «sin acceso». <strong>Entrega</strong> el contexto de acceso.</li>
+<li><strong>2. Administración</strong> · documento pendiente · Asignar rol, organización y áreas; listar cuentas sin asignar; activar y desactivar; ver auditoría. <strong>Consume</strong> el contexto de acceso (solo Administrador).</li>
+<li><strong>3. Operación</strong> · <a href="03-operacion.html">03-operacion.md</a> · Mis tareas, detalle, checklist, foto de evidencia y cierre; para Gestor, crear y asignar tareas y plantillas. <strong>Consume</strong> el contexto de acceso y las personas habilitadas.</li>
+<li><strong>4. Reportes y alertas</strong> · documento pendiente · Cumplimiento por persona, área y periodo; alertas simples. <strong>Consume</strong> tareas y evidencia.</li>
+<li><strong>Transversales:</strong> notificaciones (dentro de la app, correo y push) y auditoría (de solo inserción). Las usan todos los módulos.</li>
+</ul>
+<h2>Contrato central: el contexto de acceso</h2>
+<p>Lo entrega <strong>Acceso</strong> después de certificar a la persona. Ningún otro módulo vuelve a decidir quién es ni qué rol tiene.</p>
+<ul>
+<li><strong>Datos:</strong> <code>user_id</code>, <code>nombre</code>, <code>org_id</code>, <code>rol</code> (<code>admin</code>, <code>gestor</code> o <code>tecnico</code>), <code>areas</code>, <code>habilitada</code> (cuenta activa, con organización y con rol) y <code>motivo</code> cuando no lo está (<code>desactivada</code>, <code>sin_organizacion</code> o <code>sin_rol</code>).</li>
+<li><strong>Cómo se obtiene:</strong> una función de base de datos <code>mi_acceso()</code> que lee perfil, rol y áreas de quien llama (<strong>por preparar</strong>: hoy existen <code>auth_org()</code> y <code>auth_role()</code> en las migraciones de la Etapa 1, sin aplicar).</li>
+<li><strong>En la app:</strong> un hook <code>useAcceso()</code> (TanStack Query, llave estable <code>["acceso"]</code>) que se invalida al iniciar o cerrar sesión.</li>
+<li><strong>Regla:</strong> si <code>habilitada</code> es falso, la app solo muestra las pantallas de «sin acceso» del módulo Acceso. La seguridad real sigue en RLS: este contrato ordena la interfaz, no protege los datos.</li>
+</ul>
+<h2>Cómo se agrega o cambia un módulo</h2>
+<ol>
+<li>Se escribe o actualiza su documento (pantallas, un flujo por pantalla, datos, contrato).</li>
+<li>Si cambia un contrato, se actualizan los módulos que lo consumen en el mismo cambio.</li>
+<li>Se sigue la regla de sincronización de <code>AGENTE.md</code> (sección 8): primero <code>docs/BASE-DEL-PRODUCTO.md</code>, después lo demás.</li>
+</ol>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:"default",securityLevel:"strict",flowchart:{htmlLabels:true,useMaxWidth:true}});</script>
+</body>
+</html>

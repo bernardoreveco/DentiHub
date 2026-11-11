@@ -16,6 +16,7 @@ Roadmap de 8 fases: `C:\Users\berna\Downloads\Roadmap DentiHub.xlsx` (todo en 0%
 ## Decisiones tomadas
 - Primero un **prototipo navegable sin base de datos** para socializar con el equipo; el backend solo después de aprobarlo.
 - **Alcance de construcción: Etapa 1 acotada = app de terreno** ([ADR-0002](docs/adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10): ingreso por invitación, roles y áreas, tareas con checklist y foto de evidencia obligatoria, alertas, reportes simples y auditoría. Archivos, mensajes, documentos, wiki, planillas, aprobaciones y el modo sin conexión completo son **Etapa 2**. La demo sigue mostrando la visión completa. Se asume multi-organización (`org_id`) con una sola organización por ahora.
+- **Se construye por módulos que se conectan por contratos** ([ADR-0003](docs/adr/0003-construccion-por-modulos.md)): 1) Acceso (Supabase Auth certifica persona, cuenta y habilitación; entrega el «contexto de acceso»), 2) Administración, 3) Operación, 4) Reportes y alertas; notificaciones y auditoría son transversales. Cada módulo tiene su documento en `docs/modulos/` con **un flujo por pantalla**.
 - Backend recomendado para producción: **Supabase Pro** (roles con permisos por fila, auditoría, archivos en el mismo proveedor). Pendiente de decidir tras el prototipo.
 - La edición simultánea en tiempo real y el modo sin conexión son lo más riesgoso; en el prototipo solo se simulan.
 - Diseñar permisos y auditoría desde la fase 1, no al final.

@@ -23,6 +23,10 @@ Las líneas `<!-- sync:… -->` las lee el verificador: **no las borres**; actua
 | `rep` | Reportes | **1** | Etapa 1: cumplimiento por persona, área y periodo, tareas urgentes y alertas simples. Etapa 2: aprobaciones pendientes y reglas avanzadas | Por construir (Fase 6 básica) |
 | `admin` | Administración | **1** | Usuarios (invitar, rol, estado), áreas y auditoría de solo lectura | **Parcial:** `profiles`, `user_roles` y `audit_log` ya existen en Supabase (Fases 1 y 8) |
 
+### Construcción por módulos
+
+Por decisión de Bernardo ([ADR-0003](adr/0003-construccion-por-modulos.md)) la Etapa 1 se construye en módulos que se conectan por contratos: **Acceso → Administración → Operación → Reportes y alertas**, con notificaciones y auditoría como piezas transversales. Las pantallas y el flujo de cada una están en [`docs/modulos/`](modulos/README.md). Los módulos de esta tabla son lo que ve la persona en el menú; los módulos de construcción agrupan pantallas (por ejemplo, Operación construye las pantallas de Tareas).
+
 ### Alcance por etapa
 
 Por decisión de Bernardo ([ADR-0002](adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10) se construye primero la **Etapa 1: app de terreno** (módulos en negrita: Inicio, Tareas, Reportes y Administración). Los demás módulos son **Etapa 2** y se deciden según el uso real. **La demo sigue mostrando la visión completa** y no se recorta. Por eso la línea `sync:modulos` conserva los 10 módulos: es la lista del producto, no la de la etapa.
