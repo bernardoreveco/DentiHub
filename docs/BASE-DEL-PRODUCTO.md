@@ -18,7 +18,7 @@ Las líneas `<!-- sync:… -->` las lee el verificador: **no las borres**; actua
 | `docs` | Documentos | 2 | Documento colaborativo con comentarios y menciones | Por construir (Fase 5) |
 | `wiki` | Wiki | 2 | Páginas por sección (procedimientos, manuales, preguntas frecuentes), con enlace a checklists | Por construir (Fase 5) |
 | `plan` | Planillas | 2 | Tabla compartida en vistas de cuadrícula, tablero y calendario, con filtro, fórmula de suma y cursores de otras personas | Por construir (Fase 3) |
-| `tareas` | Tareas | **1** | Lista, tablero, calendario y vista de celular con QR; checklists, repetición y **foto de evidencia obligatoria** | En preparación: migraciones de la Etapa 1 escritas, sin aplicar (Fase 4) |
+| `tareas` | Tareas | **1** | Lista, tablero, calendario y vista de celular con QR; checklists, repetición y **foto de evidencia obligatoria** | Base aplicada en desarrollo (12-11-2026); la app aún no conecta Operación (oleada 0, ADR-0006) |
 | `aprob` | Aprobaciones | 2 | Solicitudes con estado; quien tiene rol de gestión aprueba o rechaza | Por construir (Fase 5) |
 | `rep` | Reportes | **1** | Etapa 1: cumplimiento por persona, área y periodo, tareas urgentes y alertas simples. Etapa 2: aprobaciones pendientes y reglas avanzadas | Por construir (Fase 6 básica) |
 | `admin` | Administración | **1** | Usuarios (invitar, rol, estado), áreas y auditoría de solo lectura | **Parcial:** `profiles`, `user_roles` y `audit_log` ya existen en Supabase (Fases 1 y 8) |
@@ -32,6 +32,10 @@ Por decisión de Bernardo ([ADR-0003](adr/0003-construccion-por-modulos.md)) la 
 Por decisión de Bernardo ([ADR-0002](adr/0002-alcance-etapa-1-app-de-terreno.md), 2026-11-10) se construye primero la **Etapa 1: app de terreno** (módulos en negrita: Inicio, Tareas, Reportes y Administración). Los demás módulos son **Etapa 2** y se deciden según el uso real. **La demo sigue mostrando la visión completa** y no se recorta. Por eso la línea `sync:modulos` conserva los 10 módulos: es la lista del producto, no la de la etapa.
 
 **MVP de uso** ([ADR-0004](adr/0004-plataforma-y-mvp-de-uso.md)): la app real de la Etapa 1 está en `app/` (Inicio, Tareas con checklist y foto, Reportes y Administración). Por ahora funciona en **modo demo**, con datos guardados en el navegador, hasta que exista el proyecto de Supabase. Las ideas tomadas de apps existentes están en [`docs/referencias/`](referencias/ideas-de-apps-existentes.md).
+
+**Orden de construcción** ([ADR-0006](adr/0006-priorizacion-de-herramientas.md), aceptado): 0) conectar Operación a Supabase; 1) cierre de la Etapa 1 (tareas que se repiten, editor de plantillas, prioridad, recordatorios y alertas, reportes con Excel); 2) calidad en terreno (acción correctiva, PDF, firma); 3) Activos (QR y solicitudes); 4) sin conexión; 5) comunicación. Lista completa en [`docs/referencias/listado-de-trabajo-herramientas.md`](referencias/listado-de-trabajo-herramientas.md).
+
+**Demo bajo permiso** ([ADR-0007](adr/0007-demo-bajo-permiso.md)): la app publicada es siempre la real; la demo se entra con un enlace temporal que crea y revoca el Administrador, y nunca toca la base real.
 
 **Transversal (en la demo):** ingreso con correo y clave más verificación en dos pasos (simulada), registro solo por invitación, recuperación de clave, búsqueda global, notificaciones, indicador En línea / Sin conexión, y «Sugerir un cambio» para recoger ideas del equipo.
 
@@ -71,7 +75,7 @@ Qué tablas existen y cuáles se planean (nombres provisorios):
 | Estado | Tablas |
 |---|---|
 | **Existen** en Supabase | `profiles`, `user_roles`, `audit_log` |
-| **Etapa 1: migraciones escritas, sin aplicar** (en revisión; nombres provisorios hasta cerrar la revisión) | `organizations`, `areas`, `user_areas`, `form_templates`, `task_definitions`, `tasks`, `task_evidence`; bucket privado `evidence`; funciones `admin_assign_member`, `admin_set_active`, `admin_list_unassigned_accounts`, `create_form_template`, `save_task_progress`, `complete_task`, `cancel_task`, `register_evidence`, `generate_recurring_tasks` |
+| **Etapa 1: aplicadas en desarrollo** (12-11-2026, más `invitations` y `mi_acceso` del ADR-0005) | `organizations`, `areas`, `user_areas`, `form_templates`, `task_definitions`, `tasks`, `task_evidence`; bucket privado `evidence`; funciones `admin_assign_member`, `admin_set_active`, `admin_list_unassigned_accounts`, `create_form_template`, `save_task_progress`, `complete_task`, `cancel_task`, `register_evidence`, `generate_recurring_tasks` |
 | **Etapa 1: por diseñar** | `notifications`, `alert_rules`, `alerts`, `role_page_permissions`; y para Acceso ([ADR-0005](adr/0005-base-de-verificacion-acceso.md), [prompt](prompts/01-base-de-verificacion.md)): `invitations`, `organizations.idle_timeout_minutes`, funciones `mi_acceso`, `vincular_invitacion`, `admin_create_invitation`, `admin_revoke_invitation` y `auth_role` con `aal2` para Administradores |
 | **Etapa 2** (planeadas) | `folders`, `files`, tablas de planillas, `approval_requests`, `channels`, `channel_members`, `messages`, `documents`, `wiki_pages` |
 

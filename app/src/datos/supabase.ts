@@ -394,6 +394,44 @@ export function crearFuenteSupabase(sb: SupabaseClient): FuenteDatos {
       );
     },
 
+    // ── Enlaces de demo (ADR-0007) ──
+    async enlacesDemo() {
+      const { data, error, status } = await sb
+        .from("demo_links")
+        .select("id, label, created_at, expires_at, revoked_at, uses, last_used_at")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw esConexion(status, error) ? new ErrorDeConexion() : new ErrorDeRegla("No se pudieron leer los enlaces de demo.");
+      return ((data ?? []) as {
+        id: string;
+        label: string;
+        created_at: string;
+        expires_at: string;
+        revoked_at: string | null;
+        uses: number;
+        last_used_at: string | null;
+      }[]).map((f) => ({
+        id: f.id,
+        nombre: f.label,
+        creadoEn: f.created_at,
+        venceEn: f.expires_at,
+        revocadoEn: f.revoked_at,
+        usos: f.uses,
+        ultimoUso: f.last_used_at,
+      }));
+    },
+
+    async crearEnlaceDemo(nombre, dias) {
+      const { data, error, status } = await sb.rpc("admin_crear_enlace_demo", { p_label: nombre, p_dias: dias });
+      if (error) throw esConexion(status, error) ? new ErrorDeConexion() : new ErrorDeRegla(error.message);
+      return String(data);
+    },
+
+    async revocarEnlaceDemo(id) {
+      const { error, status } = await sb.rpc("admin_revocar_enlace_demo", { p_id: id });
+      if (error) throw esConexion(status, error) ? new ErrorDeConexion() : new ErrorDeRegla(error.message);
+    },
+
     // ── Operación (siguiente paso) ──
     async plantillas() {
       throw new ErrorDeRegla(PENDIENTE_OPERACION);

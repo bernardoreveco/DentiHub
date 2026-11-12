@@ -14,7 +14,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { BarChart3, ClipboardList, Home, ScrollText, Users } from "lucide-react";
+import { BarChart3, ClipboardList, Home, Link2, ScrollText, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, type NavGroup } from "@/components/AppShell";
 import { AccessDenied } from "@/components/EmptyState";
@@ -31,6 +31,9 @@ import { SinAcceso, SinConexion } from "@/modulos/acceso/SinAcceso";
 import { useAcceso, useEscucharSesion, useSesion } from "@/modulos/acceso/useAcceso";
 import { useInactividad } from "@/modulos/acceso/useInactividad";
 import { Auditoria } from "@/modulos/administracion/Auditoria";
+import { EnlacesDemo } from "@/modulos/administracion/EnlacesDemo";
+import { ActivarDemo } from "@/modulos/acceso/ActivarDemo";
+import { modoApp } from "@/datos/modo";
 import { Personas } from "@/modulos/administracion/Personas";
 import { Inicio } from "@/modulos/inicio/Inicio";
 import { DetalleTarea } from "@/modulos/operacion/DetalleTarea";
@@ -48,6 +51,8 @@ const MENU: NavGroup[] = [
     items: [
       { to: "/admin", label: "Personas", icon: Users },
       { to: "/admin/auditoria", label: "Auditoría", icon: ScrollText },
+      // Solo en la app real: en la demo no hay enlaces que administrar (ADR-0007).
+      ...(modoApp === "supabase" ? [{ to: "/admin/demo", label: "Enlaces de demo", icon: Link2 }] : []),
     ],
   },
 ];
@@ -129,6 +134,7 @@ const ingreso = createRoute({ getParentRoute: () => raiz, path: "/ingreso", comp
 const recuperar = createRoute({ getParentRoute: () => raiz, path: "/recuperar", component: RecuperarClave });
 const confirmar = createRoute({ getParentRoute: () => raiz, path: "/auth/confirmar", component: ConfirmarEnlace });
 const claveNueva = createRoute({ getParentRoute: () => raiz, path: "/clave-nueva", component: ClaveNueva });
+const demo = createRoute({ getParentRoute: () => raiz, path: "/demo", component: ActivarDemo });
 
 const protegida = createRoute({
   getParentRoute: () => raiz,
@@ -148,6 +154,7 @@ const nueva = createRoute({ getParentRoute: () => protegida, path: "/tareas/nuev
 const reportes = createRoute({ getParentRoute: () => protegida, path: "/reportes", component: Reportes });
 const admin = createRoute({ getParentRoute: () => protegida, path: "/admin", component: Personas });
 const auditoria = createRoute({ getParentRoute: () => protegida, path: "/admin/auditoria", component: Auditoria });
+const enlacesDemo = createRoute({ getParentRoute: () => protegida, path: "/admin/demo", component: EnlacesDemo });
 
 const detalle = createRoute({
   getParentRoute: () => protegida,
@@ -163,7 +170,8 @@ const arbol = raiz.addChildren([
   recuperar,
   confirmar,
   claveNueva,
-  protegida.addChildren([inicio, tareas, nueva, detalle, reportes, admin, auditoria]),
+  demo,
+  protegida.addChildren([inicio, tareas, nueva, detalle, reportes, admin, auditoria, enlacesDemo]),
 ]);
 
 export const router = createRouter({

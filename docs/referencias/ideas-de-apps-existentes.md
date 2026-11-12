@@ -2,7 +2,7 @@
 
 Este documento resume apps parecidas a DentiHub y qué tomamos de cada una. Se toman **ideas de funcionamiento**: no se copian marcas, textos ni diseños. Los colores, los textos y los componentes salen siempre de DESIGN_SYSTEM.md.
 
-> ⚠ Escrito a partir de lo que se conoce de estas apps, sin abrir sus sitios el 2026-11-11. Antes de citarlas frente al cliente, revisa sus páginas, porque las funciones cambian.
+> ⚠ Escrito el 2026-11-11 sin abrir los sitios. El 2026-11-12 se verificaron en sus páginas y se armó el [listado de trabajo](listado-de-trabajo-herramientas.md). Cambios: **SafetyCulture ahora se llama Mitti (by SafetyCulture)** y **lumiform.com ya no es la app de formularios** (se descarta).
 
 ## Qué mirar de cada app
 

@@ -28,7 +28,7 @@ Desde el [ADR-0004](../docs/adr/0004-plataforma-y-mvp-de-uso.md) la app real viv
 4. Carga la fuente Inter en el `<head>` (código en `DESIGN_SYSTEM.md`, §1).
 5. Monta `<Toaster richColors position="top-right" />` una vez, en la raíz de la app.
 6. Copia `.env.example` a `.env` y completa los valores **solo ahí** (`.env` está en `.gitignore`; nunca va a Git).
-7. Para la base de datos, mira [`supabase/README.md`](supabase/README.md) (migración base y plantilla). **Nada de SQL se ha ejecutado.**
+7. Para la base de datos, mira [`supabase/README.md`](supabase/README.md) (migración base y plantilla). Las migraciones se aplicaron en el proyecto de desarrollo el 12-11-2026.
 
 ### Dependencias (versiones tomadas de Dentiventario)
 
@@ -62,4 +62,4 @@ Con Vite también `@tailwindcss/vite@^4.2.1`. Recomendadas para formularios y da
 - ✅ `tsc` con los mismos ajustes estrictos del inventario (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) pasa sin errores.
 - ✅ Ninguna referencia a productos, lotes, stock, movimientos, traspasos, sucursales ni pedidos en el kit.
 - ⚠ **No verificado en pantalla:** no se ejecutó una app que use el kit, así que los componentes nuevos o adaptados (`AppShell`, `StatusBadge`, `KpiCard`, `EmptyState`) no se han visto renderizados.
-- ⚠ **El SQL no se ha ejecutado** contra ninguna base de Supabase.
+- ✅ Las migraciones se aplicaron en el proyecto de desarrollo «DentiHub» el 12-11-2026, y los avisos de seguridad de Supabase se revisaron.

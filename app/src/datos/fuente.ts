@@ -9,6 +9,7 @@ import type {
   ActivacionDosPasos,
   Area,
   ContextoAcceso,
+  EnlaceDemo,
   EventoSesion,
   Evidencia,
   Invitacion,
@@ -24,6 +25,7 @@ import type {
 import { crearFuenteDemo } from "@/datos/demo";
 import { crearFuenteSupabase } from "@/datos/supabase";
 import { supabase } from "@/lib/supabase";
+import { modoApp } from "@/datos/modo";
 
 export { ErrorDeRegla, ErrorDeConexion } from "@/datos/errores";
 
@@ -66,6 +68,11 @@ export interface FuenteDatos {
   /** Desactivar corta los datos (base) y bloquea el ingreso (Auth). Devuelve un aviso si quedó a medias. */
   cambiarEstadoPersona(personaId: string, activa: boolean): Promise<string | null>;
   auditoria(): Promise<RegistroAuditoria[]>;
+  /** Enlaces de demo (ADR-0007). Solo en la app real y solo para Administradores. */
+  enlacesDemo(): Promise<EnlaceDemo[]>;
+  /** Devuelve el código UNA vez; la base guarda solo su huella. */
+  crearEnlaceDemo(nombre: string, dias: number): Promise<string>;
+  revocarEnlaceDemo(id: string): Promise<void>;
 
   // ── Operación ──
   plantillas(): Promise<Plantilla[]>;
@@ -86,11 +93,10 @@ export interface FuenteDatos {
 }
 
 function crearFuente(): FuenteDatos {
-  // La app real se activa con VITE_DATA_SOURCE=supabase y las dos variables de Supabase en el .env
-  // (o en Vercel). Sin eso, modo demo: así nadie cree que está guardando en la base real.
-  const quiereSupabase = import.meta.env["VITE_DATA_SOURCE"] === "supabase";
-  if (quiereSupabase && supabase) return crearFuenteSupabase(supabase);
-  if (quiereSupabase) console.warn("VITE_DATA_SOURCE=supabase, pero faltan las variables de Supabase: modo demo.");
+  // La app real es la de siempre; la demo solo con un enlace válido o en desarrollo (ADR-0007).
+  // Con "sin_configuracion" se crea la demo solo para no romper importaciones: main.tsx no deja
+  // entrar a la app en ese caso.
+  if (modoApp === "supabase" && supabase) return crearFuenteSupabase(supabase);
   return crearFuenteDemo();
 }
 

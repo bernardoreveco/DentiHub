@@ -33,6 +33,8 @@ Quedaban abiertas cuatro preguntas (CLAUDE.md, pendiente 5; AGENTE.md §10, punt
 
 ## Consecuencias
 
+> **Actualizado por el [ADR-0007](0007-demo-bajo-permiso.md):** la app ya no cae sola al modo demo. En producción, sin variables de Supabase muestra «Configuración incompleta», y la demo se abre solo con un enlace del Administrador.
+
 - **Una sola empresa cliente.** El supuesto multiorganización (`org_id`) del ADR-0002 se mantiene en el esquema porque ya está escrito y no cuesta, pero la app atiende **una sola organización**: no hay registro de empresas ni selector de organización.
 - **Los datos son de la empresa cliente.** Hay que acordar con ella quién es dueña de la cuenta de Supabase y de la de Vercel, y en qué región quedan los datos (pendiente).
 - **Variables:** las variables `VITE_*` se cargan en el panel de Vercel y en el `.env` local, nunca en Git.

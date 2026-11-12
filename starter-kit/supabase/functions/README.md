@@ -1,6 +1,6 @@
 # Funciones de servidor de DentiHub (Supabase Edge Functions)
 
-> ⚠ **No desplegadas.** Se despliegan con la confirmación de Bernardo, después de aplicar la migración `20261112120000_acceso_invitaciones_y_mi_acceso.sql`.
+> ✅ **Desplegadas en el proyecto de desarrollo** el 12-11-2026, con verificación de JWT. Falta el secreto `APP_URL` (*Edge Functions › Secrets*); sin él, solo `http://localhost:5173` puede llamarlas.
 
 | Función | Para qué | Quién la llama |
 |---|---|---|

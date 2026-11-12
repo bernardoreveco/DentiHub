@@ -474,6 +474,15 @@ export function crearFuenteDemo(): FuenteDatos {
       return e.auditoria;
     },
 
+    async enlacesDemo() {
+      throw new ErrorDeRegla("Los enlaces de demo se crean en la app real.");
+    },
+    async crearEnlaceDemo() {
+      throw new ErrorDeRegla("Los enlaces de demo se crean en la app real.");
+    },
+    async revocarEnlaceDemo() {
+      throw new ErrorDeRegla("Los enlaces de demo se crean en la app real.");
+    },
     async reiniciar() {
       const e = leer();
       for (const ev of e.evidencias) localStorage.removeItem(CLAVE_FOTO(ev.id));

@@ -130,6 +130,17 @@ export type ResultadoInvitacion = { enviado: boolean; aviso?: string };
 /** Para la pantalla A2b: el código QR que se escanea con la app autenticadora. */
 export type ActivacionDosPasos = { factorId: string; qr: string; secreto: string };
 
+/** Enlace de demo creado por un Administrador (ADR-0007). El código nunca vuelve de la base. */
+export type EnlaceDemo = {
+  id: string;
+  nombre: string;
+  creadoEn: string;
+  venceEn: string;
+  revocadoEn: string | null;
+  usos: number;
+  ultimoUso: string | null;
+};
+
 export type EventoSesion = "ingreso" | "salida" | "renovacion" | "otro";
 
 export type NuevaTarea = {

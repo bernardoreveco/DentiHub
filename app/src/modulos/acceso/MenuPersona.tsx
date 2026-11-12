@@ -9,6 +9,7 @@ import { fuente } from "@/datos/fuente";
 import type { ContextoAcceso } from "@/datos/tipos";
 import { ROLE_LABEL } from "@/lib/roles";
 import { useSesion } from "@/modulos/acceso/useAcceso";
+import { enDemoPorEnlace, salirDeDemo } from "@/datos/modo";
 
 export function MenuPersona({ acceso }: { acceso: ContextoAcceso }) {
   const { salir } = useSesion();
@@ -40,6 +41,11 @@ export function MenuPersona({ acceso }: { acceso: ContextoAcceso }) {
       {demo && (
         <Button variant="ghost" size="icon" onClick={reiniciar} aria-label="Reiniciar demo" title="Reiniciar demo">
           <RotateCcw className="size-4" />
+        </Button>
+      )}
+      {enDemoPorEnlace() && (
+        <Button variant="outline" size="sm" onClick={salirDeDemo}>
+          Salir de la demo
         </Button>
       )}
       <Button
