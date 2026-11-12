@@ -219,6 +219,9 @@ export function crearFuenteDemo(): FuenteDatos {
     async canjearEnlace() {
       throw new ErrorDeRegla("Los enlaces de correo solo funcionan en la app real.");
     },
+    async canjearCodigo() {
+      throw new ErrorDeRegla("Los enlaces de correo solo funcionan en la app real.");
+    },
     async definirClave() {
       throw new ErrorDeRegla("En el modo demo no hay claves.");
     },

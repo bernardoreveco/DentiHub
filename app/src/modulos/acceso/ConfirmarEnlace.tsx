@@ -11,8 +11,13 @@ import { ErrorFormulario, PantallaAcceso } from "@/modulos/acceso/PantallaAcceso
 const TIPOS = ["invite", "recovery"] as const;
 type Tipo = (typeof TIPOS)[number];
 
-function leerEnlace(busqueda: string): { tokenHash: string; tipo: Tipo } | null {
+type Enlace = { tokenHash: string; tipo: Tipo } | { codigo: string };
+
+function leerEnlace(busqueda: string): Enlace | null {
   const q = new URLSearchParams(busqueda);
+  // Formato por defecto de Supabase (?code=<uuid>): se acepta mientras la plantilla del correo no use token_hash.
+  const codigo = q.get("code") ?? "";
+  if (/^[0-9a-f-]{20,64}$/i.test(codigo)) return { codigo };
   const tokenHash = q.get("token_hash") ?? "";
   const tipo = q.get("type") ?? "";
   // Solo los dos tipos esperados y un token con forma razonable; lo demás es un enlace alterado.
@@ -25,7 +30,8 @@ export function ConfirmarEnlace() {
   // Se lee desde el enrutador (y no de window.location) para que la pantalla siga a la dirección actual.
   const enlace = leerEnlace(useRouterState({ select: (s) => s.location.searchStr }));
   const canjear = useMutation({
-    mutationFn: (e: { tokenHash: string; tipo: Tipo }) => fuente.canjearEnlace(e.tokenHash, e.tipo),
+    mutationFn: (e: Enlace) =>
+      "codigo" in e ? fuente.canjearCodigo(e.codigo) : fuente.canjearEnlace(e.tokenHash, e.tipo),
     // El enlace ya se usó: se quita de la barra de direcciones y se pasa a definir la clave (A6).
     onSuccess: () => void navigate({ to: "/clave-nueva", replace: true }),
   });
@@ -40,7 +46,7 @@ export function ConfirmarEnlace() {
     );
   }
 
-  const esInvitacion = enlace.tipo === "invite";
+  const esInvitacion = "tipo" in enlace && enlace.tipo === "invite";
   return (
     <PantallaAcceso
       titulo={esInvitacion ? "Activa tu cuenta" : "Cambia tu clave"}

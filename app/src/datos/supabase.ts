@@ -246,6 +246,15 @@ export function crearFuenteSupabase(sb: SupabaseClient): FuenteDatos {
       throw new ErrorDeRegla("El enlace venció o ya se usó. Pide uno nuevo.");
     },
 
+    async canjearCodigo(codigo) {
+      const { error } = await sb.auth.exchangeCodeForSession(codigo);
+      if (!error) return;
+      if (esConexionAuth(error)) throw new ErrorDeConexion();
+      throw new ErrorDeRegla(
+        "El enlace venció, ya se usó o se abrió en otro navegador. Pide uno nuevo desde este mismo navegador.",
+      );
+    },
+
     async definirClave(clave) {
       const { error } = await sb.auth.updateUser({ password: clave });
       if (!error) return;

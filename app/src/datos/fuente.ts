@@ -53,6 +53,9 @@ export interface FuenteDatos {
   recuperarClave(correo: string): Promise<void>;
   /** A9. Canjea el enlace del correo SOLO cuando la persona pulsa «Continuar». */
   canjearEnlace(tokenHash: string, tipo: "invite" | "recovery"): Promise<void>;
+  /** A9, enlaces con ?code= (formato por defecto de Supabase, mientras la plantilla del correo no use
+   *  token_hash). Canjea el código PKCE: solo funciona en el navegador que pidió el enlace. */
+  canjearCodigo(codigo: string): Promise<void>;
   /** A6. Guarda la clave nueva de la sesión actual. */
   definirClave(clave: string): Promise<void>;
   /** Avisa de cambios de sesión (también desde otra pestaña). Devuelve la función para dejar de escuchar. */
