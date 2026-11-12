@@ -1,37 +1,39 @@
-// Administración · Personas: rol, áreas y estado de cada cuenta; activar y desactivar.
-// Invitar personas queda para la fuente Supabase (función de servidor con la clave de servicio,
-// ADR-0004); en la demo el botón explica por qué no está.
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+// Administración · Personas: cuentas con rol, áreas y estado; invitar; activar y desactivar.
+// Desactivar corta los datos de inmediato (base) y bloquea el ingreso (Auth), ADR-0005.
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ScrollText, UserPlus } from "lucide-react";
-import { toast } from "sonner";
 import { PageLoading } from "@/components/Loading";
 import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@/components/Section";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fuente } from "@/datos/fuente";
 import { ROLE_LABEL } from "@/lib/roles";
 import { useAcceso } from "@/modulos/acceso/useAcceso";
+import { useCambiarEstado } from "@/modulos/administracion/consultas";
+import { DialogoInvitar } from "@/modulos/administracion/DialogoInvitar";
+import { Invitaciones } from "@/modulos/administracion/Invitaciones";
 import { useAreas, usePersonas } from "@/modulos/operacion/consultas";
 
 export function Personas() {
   const { data: acceso } = useAcceso();
   const personas = usePersonas();
   const areas = useAreas();
-  const qc = useQueryClient();
-  const cambiar = useMutation({
-    mutationFn: (v: { id: string; activa: boolean }) => fuente.cambiarEstadoPersona(v.id, v.activa),
-    onSuccess: async (_d, v) => {
-      await Promise.all([qc.invalidateQueries({ queryKey: ["personas"] }), qc.invalidateQueries({ queryKey: ["auditoria"] })]);
-      toast.success(v.activa ? "Cuenta activada" : "Cuenta desactivada");
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const cambiar = useCambiarEstado();
+  const [invitando, setInvitando] = useState(false);
 
   if (personas.isLoading) return <PageLoading />;
   if (personas.error) throw personas.error;
+
+  const desactivar = (id: string, nombre: string, activa: boolean) => {
+    if (
+      !activa &&
+      !window.confirm(`¿Desactivar a ${nombre}? Dejará de ver datos de inmediato y no podrá volver a ingresar.`)
+    )
+      return;
+    cambiar.mutate({ id, activa });
+  };
 
   return (
     <div className="space-y-5">
@@ -45,7 +47,7 @@ export function Personas() {
                 <ScrollText /> Ver auditoría
               </Link>
             </Button>
-            <Button onClick={() => toast.info("Invitar personas estará disponible al conectar la base de datos.")}>
+            <Button onClick={() => setInvitando(true)}>
               <UserPlus /> Invitar persona
             </Button>
           </>
@@ -77,14 +79,16 @@ export function Personas() {
                       : "Todas"}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge tone={p.activa ? "success" : "neutral"}>{p.activa ? "Activa" : "Desactivada"}</StatusBadge>
+                    <StatusBadge tone={p.activa ? "success" : "neutral"}>
+                      {p.activa ? "Activa" : "Desactivada"}
+                    </StatusBadge>
                   </TableCell>
                   <TableCell>
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={cambiar.isPending || p.id === acceso?.userId}
-                      onClick={() => cambiar.mutate({ id: p.id, activa: !p.activa })}
+                      onClick={() => desactivar(p.id, p.nombre, !p.activa)}
                     >
                       {p.activa ? "Desactivar" : "Activar"}
                     </Button>
@@ -95,6 +99,8 @@ export function Personas() {
           </Table>
         </div>
       </Section>
+      <Invitaciones areas={areas.data ?? []} />
+      <DialogoInvitar abierto={invitando} onCambio={setInvitando} areas={areas.data ?? []} />
     </div>
   );
 }

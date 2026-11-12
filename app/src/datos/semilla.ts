@@ -1,10 +1,28 @@
 // Datos de ejemplo del modo demo. Todo es ficticio (personas, correos y empresa).
 // Las fechas se calculan desde «ahora» para que siempre haya tareas de hoy, atrasadas y próximas.
 import type { Area, Persona, Plantilla, RegistroAuditoria, Tarea } from "@/datos/tipos";
+import type { AppRole } from "@/lib/roles";
+
+/** Invitación guardada en la demo (misma forma que la tabla invitations, ADR-0005). */
+export type InvitacionDemo = {
+  id: string;
+  correo: string;
+  rol: AppRole;
+  areaIds: string[];
+  creadaEn: string;
+  venceEn: string;
+  aceptadaEn: string | null;
+  revocadaEn: string | null;
+};
 
 export type EstadoDemo = {
-  version: 1;
+  version: 2;
   sesion: string | null;
+  /** La sesión actual pasó la verificación en dos pasos (equivale a aal2). */
+  aal2: boolean;
+  /** Personas con la verificación en dos pasos ya activada. */
+  dosPasos: string[];
+  invitaciones: InvitacionDemo[];
   areas: Area[];
   personas: Persona[];
   plantillas: Plantilla[];
@@ -98,8 +116,22 @@ export function semilla(ahora = new Date()): EstadoDemo {
   ];
 
   return {
-    version: 1,
+    version: 2,
     sesion: null,
+    aal2: false,
+    dosPasos: [],
+    invitaciones: [
+      {
+        id: "inv-1",
+        correo: "jorge.diaz@empresa-demo.cl",
+        rol: "tecnico",
+        areaIds: ["area-bod"],
+        creadaEn: h(-1, 10),
+        venceEn: h(6, 10),
+        aceptadaEn: null,
+        revocadaEn: null,
+      },
+    ],
     areas,
     personas,
     plantillas,

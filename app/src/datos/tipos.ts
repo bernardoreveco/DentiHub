@@ -76,9 +76,17 @@ export type RegistroAuditoria = {
   creadaEn: string;
 };
 
+/** Motivos de «sin acceso», en el orden fijo en que los evalúa mi_acceso() (ADR-0005). */
+export type MotivoSinAcceso =
+  | "correo_sin_confirmar"
+  | "desactivada"
+  | "sin_organizacion"
+  | "sin_rol"
+  | "requiere_dos_pasos";
+
 /**
  * Contrato «contexto de acceso» (docs/modulos/README.md). Lo entrega el módulo Acceso y lo
- * consumen todos los demás. En Supabase lo devolverá la función mi_acceso() (pendiente).
+ * consumen todos los demás. En Supabase lo devuelve la función mi_acceso() (ADR-0005).
  */
 export type ContextoAcceso = {
   userId: string;
@@ -87,8 +95,42 @@ export type ContextoAcceso = {
   rol: AppRole | null;
   areas: string[];
   habilitada: boolean;
-  motivo: "desactivada" | "sin_organizacion" | "sin_rol" | null;
+  motivo: MotivoSinAcceso | null;
+  /** Solo Administradores: la verificación en dos pasos es obligatoria. */
+  mfaRequerida: boolean;
+  /** Nivel de la sesión: "aal1" (solo clave) o "aal2" (con verificación en dos pasos). */
+  aal: "aal1" | "aal2";
+  /** Cierre de sesión por inactividad de la organización; null = apagado. */
+  inactividadMinutos: number | null;
 };
+
+export type EstadoInvitacion =
+  | "pendiente"
+  | "enviada"
+  | "error_envio"
+  | "aceptada"
+  | "vencida"
+  | "revocada";
+
+export type Invitacion = {
+  id: string;
+  correo: string;
+  rol: AppRole;
+  areaIds: string[];
+  estado: EstadoInvitacion;
+  creadaEn: string;
+  venceEn: string;
+};
+
+export type NuevaInvitacion = { correo: string; rol: AppRole; areaIds: string[] };
+
+/** Resultado de invitar o reenviar: la invitación puede quedar registrada aunque el correo falle. */
+export type ResultadoInvitacion = { enviado: boolean; aviso?: string };
+
+/** Para la pantalla A2b: el código QR que se escanea con la app autenticadora. */
+export type ActivacionDosPasos = { factorId: string; qr: string; secreto: string };
+
+export type EventoSesion = "ingreso" | "salida" | "renovacion" | "otro";
 
 export type NuevaTarea = {
   titulo: string;

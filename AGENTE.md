@@ -1,6 +1,6 @@
 # Agente de DentiHub: objetivos y límites
 
-Versión 5 · 2026-11-11 · **Borrador para aprobar.** (La v2 agregó la sección 8, sincronización de cambios; la v3, la sección 12, equipo de agentes; la v4 actualiza las decisiones abiertas tras el ADR-0002; la v5 aplica el ADR-0004: Supabase + GitHub + Vercel, sin Lovable, app en `app/`.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
+Versión 6 · 2026-11-12 · **Borrador para aprobar.** (La v6 agrega que los diagramas de Miro se actualizan solos ante un cambio de arquitectura o de conexiones.) (La v2 agregó la sección 8, sincronización de cambios; la v3, la sección 12, equipo de agentes; la v4 actualiza las decisiones abiertas tras el ADR-0002; la v5 aplica el ADR-0004: Supabase + GitHub + Vercel, sin Lovable, app en `app/`.) Lo que dice «Propuesto» es un supuesto razonable que puedes cambiar; lo marcado «Decide Bernardo» queda abierto.
 
 ## 1. Quién es y a quién responde
 
@@ -77,7 +77,8 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 | **Un rol o un permiso** | `docs/BASE-DEL-PRODUCTO.md` (matriz y línea `sync:roles`) → `docs/diagramas/permisos-por-rol.md` (y su HTML) → `starter-kit/src/lib/roles.ts` → **migración SQL** (enum, RLS, políticas) → la demo (selector de rol y lo que ve cada rol) → `CLAUDE.md` y este archivo → pruebas de RLS |
 | **Un flujo** (aprobar, completar tarea, invitar…) | `docs/BASE-DEL-PRODUCTO.md` (sección de flujos) → el documento del módulo en `docs/modulos/` (flujo de la pantalla) y `docs/diagramas/` → la demo → prompts de Lovable → función o migración de base de datos → ADR o roadmap |
 | **Datos** (tabla o columna) | **Migración con reversa** → tipos de Supabase → `docs/BASE-DEL-PRODUCTO.md` (sección de datos) → `app/src/datos/` (tipos, fuente demo y semilla) → datos de ejemplo de la demo |
-| **Arquitectura, stack o dominio** | ADR nuevo o actualizado → `CLAUDE.md` («Decisiones tomadas») → este archivo si cambian límites |
+| **Arquitectura, stack o dominio** | ADR nuevo o actualizado → `CLAUDE.md` («Decisiones tomadas») → este archivo si cambian límites → **diagramas de Miro** |
+| **Conexiones entre módulos, pantallas o servicios** (un flujo nuevo, una función de servidor, un contrato) | `docs/modulos/` y `docs/diagramas/` (y sus HTML) → **diagramas de Miro del tablero «DentiHub»**, en el mismo cambio y sin que haya que pedirlo |
 | **Reglas del agente** | Este archivo (subir la versión) → `.claude/agents/` si afecta a algún agente del equipo (§12) → resumen en `CLAUDE.md` |
 | **Textos de interfaz** | La demo → prompts de Lovable → landing → kit, si el texto es compartido |
 
@@ -91,6 +92,8 @@ Trabaja como ingeniero senior, **sin adivinar**: entiende el código antes de to
 - Ejecutar SQL en el Supabase real: la migración se **prepara, se destaca al inicio del resumen y espera confirmación**.
 - Subir a GitHub, hacer commits sin confirmación o editar archivos fuera de la carpeta (como el Excel del roadmap, que solo se actualiza en una copia y con permiso).
 - Borrar nada sin confirmación.
+
+**Miro (obligatorio desde la v6).** Los diagramas del tablero «DentiHub» en Miro son una copia de `docs/modulos/` y `docs/diagramas/`. Todo cambio de arquitectura o de conexiones los actualiza **en el mismo cambio, sin pedirlo**: el agente principal edita el diagrama que corresponde y, si el cambio agrega un flujo, crea uno nuevo en la sección del módulo. Nunca borra elementos que no creó él (como notas o diagramas de otras personas): si un diagrama viejo quedó obsoleto, lo marca con un título «Obsoleto» y avisa. Si Miro no está conectado o falla, lo deja en **Pendiente de sincronizar** con la lista exacta de diagramas. Los subagentes no tienen acceso a Miro: lo hace el agente principal.
 
 **Qué comprueba el verificador y qué no.** Comprueba que coincidan módulos, roles (base, `roles.ts`, enum de SQL y selector de la demo), colores (demo y kit) y que `DESIGN_SYSTEM.md` mencione los valores del kit. **No** revisa prompts de Lovable, ADR, landing, el roadmap en Excel ni los textos: eso lo cubre el agente a mano con la tabla de arriba. Un cambio que no toca la estructura (una errata, un detalle visual menor) no necesita la cascada, pero sí pasar el verificador.
 

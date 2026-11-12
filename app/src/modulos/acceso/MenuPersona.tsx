@@ -47,7 +47,7 @@ export function MenuPersona({ acceso }: { acceso: ContextoAcceso }) {
         size="icon"
         aria-label="Salir"
         title="Salir"
-        onClick={() => salir.mutate(undefined, { onSuccess: () => void navigate({ to: "/ingreso" }) })}
+        onClick={() => salir.mutate(undefined, { onSettled: () => void navigate({ to: "/ingreso" }) })}
       >
         <LogOut className="size-4" />
       </Button>

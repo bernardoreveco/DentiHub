@@ -158,9 +158,10 @@ INSERT INTO public.organizations (id, name) VALUES
   ('a1a1a1a1-0000-4000-8000-000000000001', 'Org A de prueba'),
   ('b1b1b1b1-0000-4000-8000-000000000001', 'Org B de prueba');
 
-INSERT INTO auth.users (id, instance_id, aud, role, email, created_at, updated_at)
+-- email_confirmed_at: desde la migración de Acceso (20261112120000), sin correo confirmado no hay rol.
+INSERT INTO auth.users (id, instance_id, aud, role, email, email_confirmed_at, created_at, updated_at)
 SELECT v.id::uuid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-       v.email, now(), now()
+       v.email, now(), now(), now()
 FROM (VALUES
   ('c0000000-0000-4000-8000-000000000001', 'admin_a@example.test'),
   ('c0000000-0000-4000-8000-000000000002', 'gestor_a@example.test'),
@@ -417,7 +418,7 @@ SELECT rolname, rolbypassrls, rolsuper FROM pg_roles WHERE rolname IN ('postgres
 BEGIN;
 SET LOCAL ROLE authenticated;
 
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);
 SELECT pruebas.debe_ser($q$SELECT format('%s|%s|%s|%s', COALESCE(public.auth_org()::text,'-'), COALESCE(public.auth_role()::text,'-'), public.is_manager(), public.is_admin())$q$,
   'a1a1a1a1-0000-4000-8000-000000000001|admin|true|true');                      -- ADMIN_A
 
@@ -441,7 +442,7 @@ SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-0000000
 SELECT pruebas.debe_ser($q$SELECT format('%s|%s|%s|%s', COALESCE(public.auth_org()::text,'-'), COALESCE(public.auth_role()::text,'-'), public.is_manager(), public.is_admin())$q$,
   '-|-|false|false');                                                           -- DESACT: con rol, pero inactiva
 
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated"}', true);
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated","aal":"aal2"}', true);
 SELECT pruebas.debe_ser($q$SELECT format('%s|%s|%s|%s', COALESCE(public.auth_org()::text,'-'), COALESCE(public.auth_role()::text,'-'), public.is_manager(), public.is_admin())$q$,
   'b1b1b1b1-0000-4000-8000-000000000001|admin|true|true');                      -- ADMIN_B
 
@@ -546,7 +547,7 @@ SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.areas WHERE org_id 
 SELECT pruebas.debe_fallar($q$SELECT public.complete_task('f0000000-0000-4000-8000-000000000001')$q$, '42501', 'no está asignada a ti');
 SELECT pruebas.debe_fallar($q$SELECT public.save_task_progress('f0000000-0000-4000-8000-000000000001', '{}'::jsonb)$q$, '42501', 'no está asignada a ti');
 
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated"}', true);   -- ADMIN_B
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_B
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.tasks WHERE org_id = 'a1a1a1a1-0000-4000-8000-000000000001'$q$, '0');
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.profiles WHERE org_id = 'a1a1a1a1-0000-4000-8000-000000000001'$q$, '0');
 SELECT pruebas.debe_fallar($q$SELECT public.cancel_task('f0000000-0000-4000-8000-000000000001')$q$, '42501', 'La tarea no existe');
@@ -590,7 +591,7 @@ SELECT pruebas.debe_fallar($q$UPDATE public.tasks SET status = 'cancelada' WHERE
 SELECT pruebas.debe_fallar($q$INSERT INTO public.tasks (title, template_id, status)
   VALUES ('x', 'e0000000-0000-4000-8000-000000000002', 'completada')$q$, '42501', 'permission denied');
 
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_fallar($q$UPDATE public.tasks SET status = 'completada' WHERE id = 'f0000000-0000-4000-8000-000000000002'$q$, '42501', 'permission denied');
 ROLLBACK;
 ```
@@ -970,7 +971,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_ser($q$SELECT string_agg(email, ',' ORDER BY email) FROM public.admin_list_unassigned_accounts() WHERE email LIKE '%@example.test'$q$, 'sin_org@example.test');
 -- Devuelve exactamente id, email y created_at (una fila con tres columnas):
 SELECT id, email, created_at FROM public.admin_list_unassigned_accounts() WHERE email = 'sin_org@example.test';
@@ -994,14 +995,14 @@ ROLLBACK;
 BEGIN;
 UPDATE public.profiles SET active = false WHERE id = 'c0000000-0000-4000-8000-000000000001';   -- propietario: desactiva a ADMIN_A
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);
 SELECT pruebas.debe_fallar($q$SELECT * FROM public.admin_list_unassigned_accounts()$q$, '42501', 'Solo una persona administradora');
 ROLLBACK;
 
 BEGIN;
 UPDATE public.profiles SET active = false WHERE id = 'c0000000-0000-4000-8000-000000000005';   -- desactiva a SIN_ORG
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.admin_list_unassigned_accounts() WHERE email = 'sin_org@example.test'$q$, '0');
 ROLLBACK;
 ```
@@ -1011,7 +1012,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 
 -- Alta de SIN_ORG como técnico, con el área A1.
 SELECT public.admin_assign_member('c0000000-0000-4000-8000-000000000005', 'tecnico',
@@ -1024,7 +1025,7 @@ SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.audit_log WHERE act
 -- La persona recién asignada ya tiene acceso como técnico:
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000005","role":"authenticated"}', true);   -- SIN_ORG (ya asignada)
 SELECT pruebas.debe_ser($q$SELECT public.auth_role()::text$q$, 'tecnico');
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 
 -- Cambio de rol y áreas (reemplaza la lista completa; vacía = sin áreas).
 SELECT public.admin_assign_member('c0000000-0000-4000-8000-000000000004', 'gestor', 'a1a1a1a1-0000-4000-8000-000000000001');
@@ -1055,7 +1056,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated"}', true);   -- ADMIN_B
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_B
 SELECT pruebas.debe_fallar($q$SELECT public.admin_assign_member('c0000000-0000-4000-8000-000000000003', 'admin', 'b1b1b1b1-0000-4000-8000-000000000001')$q$, '42501', 'pertenece a otra organización');   -- TEC_A1
 SELECT pruebas.debe_fallar($q$SELECT public.admin_assign_member('c0000000-0000-4000-8000-000000000003', 'admin', 'a1a1a1a1-0000-4000-8000-000000000001')$q$, '42501', 'tu propia organización');
 SELECT pruebas.debe_fallar($q$SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000003', false)$q$, '42501', 'No se encontró a la persona en tu organización');
@@ -1067,7 +1068,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated"}', true);   -- ADMIN_B
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_B
 SELECT public.admin_assign_member('c0000000-0000-4000-8000-000000000005', 'tecnico', 'b1b1b1b1-0000-4000-8000-000000000001');   -- SIN_ORG pasa a org B
 SELECT pruebas.debe_ser($q$SELECT org_id::text FROM public.profiles WHERE id = 'c0000000-0000-4000-8000-000000000005'$q$, 'b1b1b1b1-0000-4000-8000-000000000001');
 ROLLBACK;
@@ -1078,7 +1079,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 
 SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000003', false);                                            -- desactiva a TEC_A1
 SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000003', false);                                            -- repetir: sin cambios, sin ensuciar la auditoría
@@ -1091,13 +1092,13 @@ SELECT pruebas.debe_ser($q$SELECT format('tasks=%s profiles=%s', (SELECT count(*
 SELECT pruebas.debe_fallar($q$SELECT public.complete_task('f0000000-0000-4000-8000-000000000002')$q$, '42501', 'No tienes acceso a esta operación');
 
 -- Se reactiva: vuelve a ver sus 2 tareas.
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);
 SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000003', true);
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000003","role":"authenticated"}', true);
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.tasks$q$, '2');
 
 -- Errores:
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);
 SELECT pruebas.debe_fallar($q$SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000001', false)$q$, 'P0001', 'No puedes desactivar tu propia cuenta');
 SELECT pruebas.debe_fallar($q$SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000013', false)$q$, '42501', 'No se encontró a la persona en tu organización');   -- TEC_B1
 SELECT pruebas.debe_fallar($q$SELECT public.admin_set_active(NULL, false)$q$, 'P0001', 'Faltan datos');
@@ -1114,7 +1115,7 @@ ROLLBACK;
 BEGIN;
 UPDATE public.user_roles SET role = 'admin' WHERE user_id = 'c0000000-0000-4000-8000-000000000002';   -- propietario: GESTOR_A pasa a admin
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT public.admin_assign_member('c0000000-0000-4000-8000-000000000002', 'tecnico', 'a1a1a1a1-0000-4000-8000-000000000001');   -- lo degrada
 SELECT pruebas.debe_ser($q$SELECT role::text FROM public.user_roles WHERE user_id = 'c0000000-0000-4000-8000-000000000002'$q$, 'tecnico');
 ROLLBACK;
@@ -1134,7 +1135,7 @@ Con una sesión simulada (aunque seas propietario): se bloquea con error. El cas
 
 ```sql
 BEGIN;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);
 SELECT pruebas.debe_fallar($q$DELETE FROM public.user_roles WHERE role = 'admin'$q$, 'P0001', 'No se puede quitar el rol de administrador a la última persona administradora');
 ROLLBACK;
 ```
@@ -1185,7 +1186,7 @@ SELECT pruebas.debe_fallar($q$UPDATE public.profiles SET active = false WHERE id
 SELECT pruebas.debe_fallar($q$INSERT INTO public.profiles (id) VALUES ('c0000000-0000-4000-8000-0000000000aa')$q$, '42501', 'permission denied');
 SELECT pruebas.debe_fallar($q$DELETE FROM public.profiles WHERE id = 'c0000000-0000-4000-8000-000000000003'$q$, '42501', 'permission denied');
 
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_afectar($q$UPDATE public.profiles SET full_name = 'Editada por admin' WHERE id = 'c0000000-0000-4000-8000-000000000003'$q$, 1);
 SELECT pruebas.debe_afectar($q$UPDATE public.profiles SET full_name = 'x' WHERE id = 'c0000000-0000-4000-8000-000000000013'$q$, 0);   -- otra organización
 SELECT pruebas.debe_fallar($q$UPDATE public.profiles SET active = false WHERE id = 'c0000000-0000-4000-8000-000000000003'$q$, '42501', 'permission denied');   -- se hace con admin_set_active
@@ -1198,7 +1199,7 @@ ROLLBACK;
 BEGIN;
 GRANT UPDATE (active, org_id) ON public.profiles TO authenticated;   -- solo en esta transacción
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_fallar($q$UPDATE public.profiles SET active = false WHERE id = 'c0000000-0000-4000-8000-000000000003'$q$, '42501', 'Solo puedes cambiar tu nombre y tu tema');
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000003","role":"authenticated"}', true);   -- TEC_A1
 SELECT pruebas.debe_fallar($q$UPDATE public.profiles SET org_id = 'b1b1b1b1-0000-4000-8000-000000000001' WHERE id = 'c0000000-0000-4000-8000-000000000003'$q$, '42501', 'Solo puedes cambiar tu nombre y tu tema');
@@ -1210,7 +1211,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_fallar($q$INSERT INTO public.user_roles (user_id, role) VALUES ('c0000000-0000-4000-8000-000000000005', 'admin')$q$, '42501', 'permission denied');
 SELECT pruebas.debe_fallar($q$UPDATE public.user_roles SET role = 'admin' WHERE user_id = 'c0000000-0000-4000-8000-000000000003'$q$, '42501', 'permission denied');
 SELECT pruebas.debe_fallar($q$DELETE FROM public.user_roles WHERE user_id = 'c0000000-0000-4000-8000-000000000003'$q$, '42501', 'permission denied');
@@ -1228,7 +1229,7 @@ SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-0000000
 SELECT pruebas.debe_afectar($q$UPDATE public.organizations SET name = 'x' WHERE id = 'a1a1a1a1-0000-4000-8000-000000000001'$q$, 0);   -- 0 filas, sin error
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000002","role":"authenticated"}', true);   -- GESTOR_A
 SELECT pruebas.debe_afectar($q$UPDATE public.organizations SET name = 'x' WHERE id = 'a1a1a1a1-0000-4000-8000-000000000001'$q$, 0);
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_afectar($q$UPDATE public.organizations SET name = 'Org A renombrada' WHERE id = 'a1a1a1a1-0000-4000-8000-000000000001'$q$, 1);
 SELECT pruebas.debe_afectar($q$UPDATE public.organizations SET name = 'x' WHERE id = 'b1b1b1b1-0000-4000-8000-000000000001'$q$, 0);   -- otra organización
 SELECT pruebas.debe_fallar($q$INSERT INTO public.organizations (name) VALUES ('Nueva')$q$, '42501', 'permission denied');
@@ -1241,7 +1242,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_afectar($q$INSERT INTO public.areas (name) VALUES ('Area nueva')$q$, 1);                                  -- org_id sale de auth_org()
 SELECT pruebas.debe_ser($q$SELECT (org_id = 'a1a1a1a1-0000-4000-8000-000000000001')::text FROM public.areas WHERE name = 'Area nueva'$q$, 'true');
 SELECT pruebas.debe_fallar($q$INSERT INTO public.areas (name) VALUES ('  AREA a1 ')$q$, '23505', 'duplicate key');             -- único sin distinguir mayúsculas ni bordes
@@ -1292,9 +1293,9 @@ SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-0000000
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM storage.objects WHERE bucket_id = 'evidence'$q$, '1');
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000002","role":"authenticated"}', true);   -- GESTOR_A: A, B, C y E (no D)
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM storage.objects WHERE bucket_id = 'evidence'$q$, '4');
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM storage.objects WHERE bucket_id = 'evidence'$q$, '4');
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated"}', true);   -- ADMIN_B: solo D
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_B: solo D
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM storage.objects WHERE bucket_id = 'evidence'$q$, '1');
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000013","role":"authenticated"}', true);   -- TEC_B1: solo D
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM storage.objects WHERE bucket_id = 'evidence'$q$, '1');
@@ -1340,7 +1341,7 @@ SELECT pruebas.debe_fallar($q$INSERT INTO storage.objects (bucket_id, name) VALU
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000002","role":"authenticated"}', true);   -- GESTOR_A
 SELECT pruebas.debe_fallar($q$INSERT INTO storage.objects (bucket_id, name) VALUES ('evidence',
   'a1a1a1a1-0000-4000-8000-000000000001/f0000000-0000-4000-8000-000000000001/0b000000-0000-4000-8000-000000000039.jpg')$q$, '42501', 'row-level security');
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_fallar($q$INSERT INTO storage.objects (bucket_id, name) VALUES ('evidence',
   'a1a1a1a1-0000-4000-8000-000000000001/f0000000-0000-4000-8000-000000000001/0b000000-0000-4000-8000-00000000003a.jpg')$q$, '42501', 'row-level security');
 -- Desactivada y sin rol (DESACT con su propia tarea; SIN_ROL):
@@ -1615,10 +1616,10 @@ curl -s -w "\nHTTP %{http_code}\n" -X POST "$SUPABASE_URL/rest/v1/rpc/complete_t
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.audit_log WHERE org_id IS DISTINCT FROM 'a1a1a1a1-0000-4000-8000-000000000001'$q$, '0');
 SELECT pruebas.debe_ser($q$SELECT (count(*) > 0)::text FROM public.audit_log$q$, 'true');
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated"}', true);   -- ADMIN_B
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000011","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_B
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.audit_log WHERE org_id = 'a1a1a1a1-0000-4000-8000-000000000001'$q$, '0');
 SELECT pruebas.debe_ser($q$SELECT count(*)::text FROM public.audit_log WHERE org_id IS DISTINCT FROM 'b1b1b1b1-0000-4000-8000-000000000001'$q$, '0');
 SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000002","role":"authenticated"}', true);   -- GESTOR_A
@@ -1635,7 +1636,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_fallar($q$INSERT INTO public.audit_log (table_name, action) VALUES ('x', 'INSERT')$q$, '42501', 'permission denied for table audit_log');
 SELECT pruebas.debe_fallar($q$UPDATE public.audit_log SET action = 'x'$q$, '42501', 'permission denied for table audit_log');
 SELECT pruebas.debe_fallar($q$DELETE FROM public.audit_log$q$, '42501', 'permission denied for table audit_log');
@@ -1793,7 +1794,7 @@ ROLLBACK;
 ```sql
 BEGIN;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);   -- ADMIN_A
+SELECT set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}', true);   -- ADMIN_A
 SELECT pruebas.debe_fallar($q$SELECT public.generate_recurring_tasks('2026-11-09'::date)$q$, '42501', 'permission denied for function');
 RESET ROLE;
 SET LOCAL ROLE anon;
@@ -1970,6 +1971,40 @@ Los objetos de Storage de la prueba por API (3.10) se eliminan desde el panel o 
 - **Frecuencia de guardados por cuenta** (limitar la tasa): se hace fuera de SQL.
 - **Copia de la auditoría fuera de la base** y plazo de retención: decisión pendiente. El propietario puede vaciar tablas de negocio con `TRUNCATE` sin dejar rastro.
 - **Eliminación de datos personales:** las claves foráneas `RESTRICT` y la auditoría inmutable impiden borrar a una persona con historial (decisión pendiente).
-- **`invitations`** (rol, organización y áreas previstos por adelantado): mejora futura; mientras tanto, M-05 muestra la limitación con más de una organización.
+- **`invitations`**: ya existe (migración de Acceso, ADR-0005) y se prueba en la sección 6. M-05 sigue mostrando la limitación de `admin_list_unassigned_accounts` con más de una organización.
 - **Otros proyectos de Supabase de Dentimagen (inventario):** no se tocan.
 - **Concurrencia real** (dos sesiones a la vez): solo L-04, a mano.
+
+
+---
+
+## 6. Acceso (migración 20261112120000, ADR-0005)
+
+Requiere la migración `20261112120000_acceso_invitaciones_y_mi_acceso.sql` aplicada **después** de las cuatro de la Etapa 1, y los datos de la sección 2.
+
+> **Ojo con el arnés:** desde esta migración, un Administrador necesita `"aal":"aal2"` en `request.jwt.claims`. Las secciones anteriores ya lo traen para ADMIN_A y ADMIN_B. Sin eso, `auth_role()` devuelve nulo y las pruebas de administrador fallan. Ese es justamente el caso X-02.
+
+Cada caso se corre dentro de `BEGIN; … ROLLBACK;`.
+
+| Id | Qué prueba | Cómo | Resultado esperado |
+|---|---|---|---|
+| X-01 | `mi_acceso()` de un técnico habilitado | claims de TEC_A1; `SELECT * FROM public.mi_acceso();` | 1 fila: `habilitada = true`, `motivo` nulo, `rol = tecnico`, `mfa_requerida = false` |
+| X-02 | **Administrador sin dos pasos** | claims de ADMIN_A **sin** `aal` (o con `"aal":"aal1"`); `SELECT public.auth_role(), public.is_admin();` y `SELECT * FROM public.mi_acceso();` | `auth_role` nulo, `is_admin = false`; `mi_acceso`: `habilitada = false`, `motivo = requiere_dos_pasos` |
+| X-03 | Administrador **con** dos pasos | claims de ADMIN_A con `"aal":"aal2"` | `auth_role = admin`; `mi_acceso` habilitada |
+| X-04 | Administrador aal1 contra la API | claims de ADMIN_A sin `aal`, `SET LOCAL ROLE authenticated;` `SELECT count(*) FROM public.tasks;` y `SELECT public.admin_set_active('c0000000-0000-4000-8000-000000000004', false);` | 0 filas; la función falla con 42501 |
+| X-05 | Orden de los motivos | claims de DESACT, SIN_ROL y SIN_ORG, uno a la vez | `desactivada`, `sin_rol` y `sin_organizacion` |
+| X-06 | Correo sin confirmar | como propietario: `UPDATE auth.users SET email_confirmed_at = NULL WHERE id = TEC_A1;` luego claims de TEC_A1 | `mi_acceso.motivo = correo_sin_confirmar`; `auth_role` nulo; `vincular_invitacion() = 'correo_sin_confirmar'` |
+| X-07 | Crear invitación | claims de ADMIN_A (aal2): `SELECT public.admin_create_invitation('nueva@example.test', 'tecnico', ARRAY['d0000000-0000-4000-8000-000000000001']::uuid[]);` | Devuelve un id; fila en `invitations`; fila `INVITE` en `audit_log` **sin** el correo en `new_data` |
+| X-08 | Invitación doble | repetir X-07 con el mismo correo | Error «Ya hay una invitación vigente…» |
+| X-09 | Invitar a un miembro | `admin_create_invitation('tec_a2@example.test', …)` | Error «Esa persona ya pertenece a la organización…» |
+| X-10 | Área de otra organización | `admin_create_invitation('x@example.test', 'tecnico', ARRAY[AREA_B1])` | Error de áreas |
+| X-11 | Gestor no invita | claims de GESTOR_A | Error 42501 |
+| X-12 | **Vincular** | Tras X-07, como propietario crea la cuenta `nueva@example.test` en `auth.users` con `email_confirmed_at = now()`; con sus claims: `SELECT public.vincular_invitacion();` y `SELECT * FROM public.mi_acceso();` | `vinculada`; perfil con org A, rol técnico, área A1; invitación con `accepted_at`; `mi_acceso` habilitada. Repetir `vincular_invitacion()` devuelve `sin_cambios` |
+| X-13 | Invitación vencida | como propietario: `UPDATE invitations SET expires_at = now() - interval '1 minute'` antes de X-12 | `sin_cambios`; `mi_acceso.motivo = sin_organizacion` |
+| X-14 | Invitación revocada | `admin_revoke_invitation(id)` antes de X-12 | `sin_cambios`; sin organización |
+| X-15 | No mueve de organización | invitación de ORG_A para el correo de TEC_B1; con sus claims, `vincular_invitacion()` | `otra_organizacion`; TEC_B1 sigue en ORG_B |
+| X-16 | Cuenta desactivada no se vincula | invitación para `desact@example.test`… | Bloqueada antes, por X-09 (ya es miembro). Con una cuenta sin organización y desactivada: `desactivada` |
+| X-17 | Lectura de invitaciones | claims de GESTOR_A y TEC_A1: `SELECT count(*) FROM public.invitations;` | 0 filas para los dos; ADMIN_A (aal2) ve las de ORG_A, nunca las de ORG_B |
+| X-18 | Nadie escribe directo | claims de ADMIN_A, `SET LOCAL ROLE authenticated;` `INSERT INTO public.invitations …` y `UPDATE public.invitations SET role = 'admin'` | permission denied |
+| X-19 | Marcar envío | `SET LOCAL ROLE authenticated;` `SELECT public.admin_mark_invitation_sent(id, NULL);` | permission denied. Con `SET LOCAL ROLE service_role;` funciona |
+| X-20 | Inactividad | ADMIN_A (aal2): `UPDATE public.organizations SET idle_timeout_minutes = 30 WHERE id = ORG_A;` y luego `= 2` | 30 se guarda y aparece en `mi_acceso.inactividad_minutos`; 2 viola el CHECK |

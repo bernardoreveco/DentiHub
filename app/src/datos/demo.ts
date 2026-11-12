@@ -10,10 +10,11 @@
 import type { FuenteDatos } from "@/datos/fuente";
 import { ErrorDeRegla } from "@/datos/errores";
 import { semilla, type EstadoDemo } from "@/datos/semilla";
-import type { ContextoAcceso, Persona, Respuesta, Tarea } from "@/datos/tipos";
+import type { ContextoAcceso, EstadoInvitacion, Persona, Respuesta, Tarea } from "@/datos/tipos";
+import type { InvitacionDemo } from "@/datos/semilla";
 import { EVIDENCIA, RESPUESTAS_BYTES_MAX, faltantes, textoFaltantes } from "@/modulos/operacion/reglas";
 
-const CLAVE = "dentihub-demo-v1";
+const CLAVE = "dentihub-demo-v2";
 const CLAVE_FOTO = (id: string) => `dentihub-demo-foto-${id}`;
 
 function leer(): EstadoDemo {
@@ -21,7 +22,7 @@ function leer(): EstadoDemo {
     const crudo = localStorage.getItem(CLAVE);
     if (crudo) {
       const e = JSON.parse(crudo) as EstadoDemo;
-      if (e.version === 1) return e;
+      if (e.version === 2) return e;
     }
   } catch {
     // Almacenamiento bloqueado o dañado: se parte de los datos de ejemplo.
@@ -67,26 +68,56 @@ function aDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+// Mismo orden de motivos que mi_acceso() (ADR-0005). En la demo el correo siempre está confirmado.
 function contexto(e: EstadoDemo): ContextoAcceso | null {
   const p = e.personas.find((x) => x.id === e.sesion);
   if (!p) return null;
+  const motivo = !p.activa ? "desactivada" : p.rol === "admin" && !e.aal2 ? "requiere_dos_pasos" : null;
   return {
     userId: p.id,
     nombre: p.nombre,
     orgId: "org-demo",
     rol: p.rol,
     areas: p.areaIds,
-    habilitada: p.activa,
-    motivo: p.activa ? null : "desactivada",
+    habilitada: motivo === null,
+    motivo,
+    mfaRequerida: p.rol === "admin",
+    aal: e.aal2 ? "aal2" : "aal1",
+    inactividadMinutos: null,
   };
 }
 
-/** Exige sesión habilitada (fail-closed) y devuelve la persona. */
+/** Exige sesión habilitada (fail-closed) y devuelve la persona. Igual que auth_role(): un
+ *  Administrador sin la verificación en dos pasos no tiene ningún permiso. */
 function actor(e: EstadoDemo): Persona {
   const p = e.personas.find((x) => x.id === e.sesion);
   if (!p || !p.activa) throw new ErrorDeRegla("Tu sesión no tiene acceso. Vuelve a ingresar.");
+  if (p.rol === "admin" && !e.aal2) throw new ErrorDeRegla("Falta la verificación en dos pasos.");
   return p;
 }
+
+function exigirAdmin(e: EstadoDemo): Persona {
+  const p = actor(e);
+  if (p.rol !== "admin") throw new ErrorDeRegla("Solo un Administrador puede hacer esto.");
+  return p;
+}
+
+function estadoDe(i: InvitacionDemo): EstadoInvitacion {
+  if (i.revocadaEn) return "revocada";
+  if (i.aceptadaEn) return "aceptada";
+  if (new Date(i.venceEn) <= new Date()) return "vencida";
+  return "enviada";
+}
+
+const SIETE_DIAS = 7 * 86400000;
+const CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** QR de mentira para la demo: un recuadro con texto (la app real muestra el QR de Supabase). */
+const QR_DEMO =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="180" height="180" fill="white" stroke="black"/><text x="90" y="85" font-size="14" text-anchor="middle" font-family="sans-serif">Código QR</text><text x="90" y="105" font-size="12" text-anchor="middle" font-family="sans-serif">(demo)</text></svg>',
+  );
 
 const esGestion = (p: Persona) => p.rol === "admin" || p.rol === "gestor";
 
@@ -112,11 +143,36 @@ export function crearFuenteDemo(): FuenteDatos {
     modo: "demo",
 
     async cuentasDemo() {
-      return leer().personas;
+      const e = leer();
+      // Las invitaciones vigentes aparecen como cuentas: entrar con una simula aceptar la invitación
+      // (lo que en la app real hace vincular_invitacion() al confirmar el correo).
+      const invitadas: Persona[] = e.invitaciones
+        .filter((i) => estadoDe(i) === "enviada")
+        .map((i) => ({ id: `inv:${i.id}`, nombre: i.correo, correo: i.correo, rol: i.rol, areaIds: i.areaIds, activa: true }));
+      return [...e.personas, ...invitadas];
     },
     async entrarDemo(personaId) {
       await espera();
       const e = leer();
+      e.aal2 = false;
+      if (personaId.startsWith("inv:")) {
+        const inv = e.invitaciones.find((i) => `inv:${i.id}` === personaId);
+        if (!inv || estadoDe(inv) !== "enviada") throw new ErrorDeRegla("Esa invitación ya no está vigente.");
+        const nueva: Persona = {
+          id: id(),
+          nombre: (inv.correo.split("@")[0] ?? inv.correo).replace(/[._]/g, " "),
+          correo: inv.correo,
+          rol: inv.rol,
+          areaIds: inv.areaIds,
+          activa: true,
+        };
+        e.personas.push(nueva);
+        inv.aceptadaEn = ahora();
+        e.sesion = nueva.id;
+        auditar(e, nueva.id, "Aceptó su invitación", "acceso", inv.id);
+        escribir(e);
+        return;
+      }
       const p = e.personas.find((x) => x.id === personaId);
       if (!p) throw new ErrorDeRegla("Esa cuenta no existe.");
       e.sesion = p.id;
@@ -130,10 +186,116 @@ export function crearFuenteDemo(): FuenteDatos {
     async salir() {
       const e = leer();
       e.sesion = null;
+      e.aal2 = false;
       escribir(e);
     },
     async acceso() {
       return contexto(leer());
+    },
+    async tieneDosPasos() {
+      const e = leer();
+      return e.sesion !== null && e.dosPasos.includes(e.sesion);
+    },
+    async iniciarDosPasos() {
+      await espera();
+      return { factorId: "demo", qr: QR_DEMO, secreto: "DEMO DEMO DEMO DEMO" };
+    },
+    async verificarDosPasos(codigo) {
+      await espera();
+      if (!/^\d{6}$/.test(codigo.trim()))
+        throw new ErrorDeRegla("El código tiene 6 dígitos (en la demo sirve cualquiera).");
+      const e = leer();
+      if (!e.sesion) throw new ErrorDeRegla("Tu sesión no es válida. Vuelve a ingresar.");
+      if (!e.dosPasos.includes(e.sesion)) {
+        e.dosPasos.push(e.sesion);
+        auditar(e, e.sesion, "Activó la verificación en dos pasos", "acceso", e.sesion);
+      }
+      e.aal2 = true;
+      escribir(e);
+    },
+    async recuperarClave() {
+      await espera(); // en la demo no se envía nada; la pantalla dice siempre lo mismo
+    },
+    async canjearEnlace() {
+      throw new ErrorDeRegla("Los enlaces de correo solo funcionan en la app real.");
+    },
+    async definirClave() {
+      throw new ErrorDeRegla("En el modo demo no hay claves.");
+    },
+    alCambiarSesion(cb) {
+      // Otra pestaña cambió la sesión de la demo.
+      const escuchar = (ev: StorageEvent) => {
+        if (ev.key === CLAVE) cb("otro");
+      };
+      window.addEventListener("storage", escuchar);
+      return () => window.removeEventListener("storage", escuchar);
+    },
+    async invitaciones() {
+      await espera();
+      const e = leer();
+      exigirAdmin(e);
+      return e.invitaciones.map((i) => ({
+        id: i.id,
+        correo: i.correo,
+        rol: i.rol,
+        areaIds: i.areaIds,
+        estado: estadoDe(i),
+        creadaEn: i.creadaEn,
+        venceEn: i.venceEn,
+      }));
+    },
+    async invitar(datos) {
+      await espera();
+      const e = leer();
+      const p = exigirAdmin(e);
+      const correo = datos.correo.trim().toLowerCase();
+      if (!CORREO.test(correo) || correo.length > 254) throw new ErrorDeRegla("Escribe un correo válido.");
+      if (e.personas.some((x) => x.correo.toLowerCase() === correo))
+        throw new ErrorDeRegla("Esa persona ya pertenece a la organización. Reactívala o cámbiale el rol.");
+      if (!datos.areaIds.every((a) => e.areas.some((x) => x.id === a)))
+        throw new ErrorDeRegla("Alguna de las áreas no existe o está inactiva en tu organización.");
+      for (const i of e.invitaciones)
+        if (i.correo === correo && estadoDe(i) === "vencida") i.revocadaEn = ahora();
+      if (e.invitaciones.some((i) => i.correo === correo && estadoDe(i) === "enviada"))
+        throw new ErrorDeRegla("Ya hay una invitación vigente para ese correo. Usa Reenviar.");
+      const inv: InvitacionDemo = {
+        id: id(),
+        correo,
+        rol: datos.rol,
+        areaIds: datos.areaIds,
+        creadaEn: ahora(),
+        venceEn: new Date(Date.now() + SIETE_DIAS).toISOString(),
+        aceptadaEn: null,
+        revocadaEn: null,
+      };
+      e.invitaciones.unshift(inv);
+      auditar(e, p.id, "Invitó a una persona", "administracion", inv.id);
+      escribir(e);
+      return {
+        enviado: true,
+        aviso: "Modo demo: no se envió ningún correo. La invitación aparece como cuenta en Ingreso.",
+      };
+    },
+    async reenviarInvitacion(invId) {
+      await espera();
+      const e = leer();
+      const p = exigirAdmin(e);
+      const inv = e.invitaciones.find((i) => i.id === invId);
+      if (!inv || inv.aceptadaEn || inv.revocadaEn) throw new ErrorDeRegla("Esa invitación ya no está pendiente.");
+      inv.venceEn = new Date(Date.now() + SIETE_DIAS).toISOString();
+      auditar(e, p.id, "Reenvió una invitación", "administracion", inv.id);
+      escribir(e);
+      return { enviado: true };
+    },
+    async revocarInvitacion(invId) {
+      await espera();
+      const e = leer();
+      const p = exigirAdmin(e);
+      const inv = e.invitaciones.find((i) => i.id === invId);
+      if (!inv || inv.aceptadaEn || inv.revocadaEn) throw new ErrorDeRegla("Esa invitación ya no está pendiente.");
+      inv.revocadaEn = ahora();
+      auditar(e, p.id, "Revocó una invitación", "administracion", inv.id);
+      escribir(e);
     },
 
     async personas() {
@@ -301,6 +463,7 @@ export function crearFuenteDemo(): FuenteDatos {
       objetivo.activa = activa;
       auditar(e, p.id, `${activa ? "Activó" : "Desactivó"} la cuenta de ${objetivo.nombre}`, "administracion", objetivo.id);
       escribir(e);
+      return null;
     },
 
     async auditoria() {
@@ -319,7 +482,7 @@ export function crearFuenteDemo(): FuenteDatos {
       escribir(nuevo);
     },
   };
-  for (const k of ["entrarDemo", "salir", "guardarAvance", "subirEvidencia", "completar", "cancelar", "crearTarea", "cambiarEstadoPersona", "reiniciar"] as const) {
+  for (const k of ["entrarDemo", "salir", "verificarDosPasos", "invitar", "reenviarInvitacion", "revocarInvitacion", "guardarAvance", "subirEvidencia", "completar", "cancelar", "crearTarea", "cambiarEstadoPersona", "reiniciar"] as const) {
     (f as unknown as Record<string, unknown>)[k] = enFila(f[k] as (...a: unknown[]) => Promise<unknown>);
   }
   return f;

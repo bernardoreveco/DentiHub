@@ -16,7 +16,8 @@ flowchart TD
     classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
     a1([La persona ingresa con correo y clave]):::ini
-    a2[Verificación en dos pasos<br/>simulada en la demo]:::paso
+    a2[vincular_invitacion y mi_acceso<br/>ADR-0005]:::paso
+    a0{¿Correo confirmado?}:::dec
     a3{¿La cuenta está activa?}:::dec
     a4{¿Tiene organización asignada?}:::dec
     a5{¿Tiene un rol válido?<br/>admin, gestor o tecnico}:::dec
@@ -25,14 +26,24 @@ flowchart TD
     x1[Sin acceso:<br/>cuenta desactivada]:::no
     x2[Sin acceso:<br/>espera que el Administrador<br/>le asigne organización]:::no
     x3[Sin acceso:<br/>rol desconocido o sin rol]:::no
+    x0[Sin acceso:<br/>confirma tu correo]:::no
+    m1{¿Es Administrador?}:::dec
+    m2{¿Sesión con dos pasos aal2?}:::dec
+    m3[A2 o A2b: verificación<br/>en dos pasos]:::paso
 
-    a1 --> a2 --> a3
+    a1 --> a2 --> a0
+    a0 -- No --> x0
+    a0 -- Sí --> a3
     a3 -- No --> x1
     a3 -- Sí --> a4
     a4 -- No --> x2
     a4 -- Sí --> a5
     a5 -- No --> x3
-    a5 -- Sí --> a6 --> a7
+    a5 -- Sí --> m1
+    m1 -- No --> a6 --> a7
+    m1 -- Sí --> m2
+    m2 -- Sí --> a6
+    m2 -- No --> m3 --> a2
 ```
 
 ## 2. Qué módulos ve cada rol

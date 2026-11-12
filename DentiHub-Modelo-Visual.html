@@ -694,8 +694,8 @@ R.admin=function(){
 function loginView(step){
   var l=$('#login');l.hidden=false;
   var h='<div class="lbox"><div class="logo" style="margin-bottom:12px">DH</div>';
-  if(step==='cred')h+='<h3 style="font-size:18px">Ingresar a DentiHub</h3><p class="hint">El registro es solo por invitación del administrador.</p><label class="fld">Correo<input id="le" type="email" placeholder="nombre@empresa.cl"></label><label class="fld">Contraseña<input id="lp" type="password" placeholder="••••••••"></label><p class="err" id="lerr" hidden></p><button class="btn pri" style="width:100%" data-act="lcred">Ingresar</button><button class="btn" style="width:100%;margin-top:8px" data-act="lgoogle">Continuar con Google (simulado)</button><p style="text-align:center;margin:12px 0 0"><button class="btn sm" style="border:0" data-act="lforgot">Olvidé mi clave</button></p>';
-  else if(step==='code')h+='<h3 style="font-size:18px">Verificación en dos pasos</h3><p class="hint">Ingresa el código de 6 dígitos de tu app de autenticación (cualquier número sirve en la demo).</p><label class="fld">Código<input id="lc" inputmode="numeric" maxlength="6" placeholder="123456"></label><p class="err" id="lerr" hidden></p><button class="btn pri" style="width:100%" data-act="lcode">Verificar</button>';
+  if(step==='cred')h+='<h3 style="font-size:18px">Ingresar a DentiHub</h3><p class="hint">El registro es solo por invitación del administrador.</p><label class="fld">Correo<input id="le" type="email" placeholder="nombre@empresa.cl"></label><label class="fld">Contraseña<input id="lp" type="password" placeholder="••••••••"></label><p class="err" id="lerr" hidden></p><button class="btn pri" style="width:100%" data-act="lcred">Ingresar</button><p style="text-align:center;margin:12px 0 0"><button class="btn sm" style="border:0" data-act="lforgot">Olvidé mi clave</button></p>';
+  else if(step==='code')h+='<h3 style="font-size:18px">Verificación en dos pasos</h3><p class="hint">Obligatoria para Administradores. Ingresa el código de 6 dígitos de tu app de autenticación (cualquier número sirve en la demo).</p><label class="fld">Código<input id="lc" inputmode="numeric" maxlength="6" placeholder="123456"></label><p class="err" id="lerr" hidden></p><button class="btn pri" style="width:100%" data-act="lcode">Verificar</button>';
   else h+='<h3 style="font-size:18px">Recuperar clave</h3><p class="hint">Te enviaremos un enlace al correo registrado.</p><label class="fld">Correo<input id="le" type="email" placeholder="nombre@empresa.cl"></label><p class="err" id="lerr" hidden></p><button class="btn pri" style="width:100%" data-act="lrec">Enviar enlace</button><button class="btn" style="width:100%;margin-top:8px" data-act="lback">Volver</button>';
   l.innerHTML=h+'</div>';
 }
@@ -781,11 +781,11 @@ var A={
   clearN:function(){S.notifs=[];updBell();$('#bellmenu').hidden=true},
   avmenu:function(){var m=$('#avmenu');$('#bellmenu').hidden=true;m.innerHTML='<div class="mh">'+esc(cur())+' · '+ROLN[S.rol]+'</div><button data-act="logout">Cerrar sesión</button>';m.hidden=!m.hidden},
   logout:function(){$('#avmenu').hidden=true;loginView('cred')},
-  lcred:function(){var e=$('#le').value.trim(),p=$('#lp').value;if(!e||!p){lerr('Ingresa tu correo y tu contraseña.');return}loginView('code')},
-  lgoogle:function(){loginView('code')},
+  /* ADR-0005: la verificación en dos pasos es obligatoria solo para Administradores; sin proveedores externos (Google). */
+  lcred:function(){var e=$('#le').value.trim(),p=$('#lp').value;if(!e||!p){lerr('Ingresa tu correo y tu contraseña.');return}if(S.rol==='admin'){loginView('code');return}$('#login').hidden=true;toast('Sesión iniciada')},
   lcode:function(){if(!/^\d{6}$/.test($('#lc').value)){lerr('El código tiene 6 dígitos.');return}$('#login').hidden=true;toast('Sesión iniciada')},
   lforgot:function(){loginView('rec')},
-  lrec:function(){if(!$('#le').value.trim()){lerr('Ingresa tu correo.');return}toast('Si el correo existe, enviamos un enlace');loginView('cred')},
+  lrec:function(){if(!$('#le').value.trim()){lerr('Ingresa tu correo.');return}toast('Si el correo está registrado, te llegará un enlace en unos minutos');loginView('cred')},
   lback:function(){loginView('cred')},
   sr:function(b){
     var x=S.sr[+b.dataset.i];$('#sres').hidden=true;$('#q').value='';

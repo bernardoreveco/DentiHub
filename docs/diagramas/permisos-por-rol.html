@@ -32,7 +32,8 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
     classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
     a1([La persona ingresa con correo y clave]):::ini
-    a2[Verificación en dos pasos&lt;br/&gt;simulada en la demo]:::paso
+    a2[vincular_invitacion y mi_acceso&lt;br/&gt;ADR-0005]:::paso
+    a0{¿Correo confirmado?}:::dec
     a3{¿La cuenta está activa?}:::dec
     a4{¿Tiene organización asignada?}:::dec
     a5{¿Tiene un rol válido?&lt;br/&gt;admin, gestor o tecnico}:::dec
@@ -41,14 +42,24 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
     x1[Sin acceso:&lt;br/&gt;cuenta desactivada]:::no
     x2[Sin acceso:&lt;br/&gt;espera que el Administrador&lt;br/&gt;le asigne organización]:::no
     x3[Sin acceso:&lt;br/&gt;rol desconocido o sin rol]:::no
+    x0[Sin acceso:&lt;br/&gt;confirma tu correo]:::no
+    m1{¿Es Administrador?}:::dec
+    m2{¿Sesión con dos pasos aal2?}:::dec
+    m3[A2 o A2b: verificación&lt;br/&gt;en dos pasos]:::paso
 
-    a1 --&gt; a2 --&gt; a3
+    a1 --&gt; a2 --&gt; a0
+    a0 -- No --&gt; x0
+    a0 -- Sí --&gt; a3
     a3 -- No --&gt; x1
     a3 -- Sí --&gt; a4
     a4 -- No --&gt; x2
     a4 -- Sí --&gt; a5
     a5 -- No --&gt; x3
-    a5 -- Sí --&gt; a6 --&gt; a7</pre></div>
+    a5 -- Sí --&gt; m1
+    m1 -- No --&gt; a6 --&gt; a7
+    m1 -- Sí --&gt; m2
+    m2 -- Sí --&gt; a6
+    m2 -- No --&gt; m3 --&gt; a2</pre></div>
 <h2>2. Qué módulos ve cada rol</h2>
 <p>Administrador: 10 módulos. Gestor: 9. Técnico: 8. Los marcados con <strong>E1</strong> son de la Etapa 1 (ADR-0002); el resto es Etapa 2.</p>
 <div class="card"><pre class="mermaid">flowchart LR

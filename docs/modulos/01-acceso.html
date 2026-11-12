@@ -21,16 +21,31 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
 </head>
 <body><main>
 <h1>Módulo 1: Acceso</h1>
-<p><strong>Qué resuelve:</strong> certificar <strong>quién es la persona</strong>, <strong>qué cuenta usa</strong> y <strong>si está habilitada</strong>, usando Supabase Auth y la base de datos. <strong>Entrega</strong> el contexto de acceso a los demás módulos (<a href="README.html#contrato-central-el-contexto-de-acceso">contrato</a>).</p>
+<p><strong>Qué resuelve:</strong> certificar <strong>quién es la persona</strong>, <strong>qué cuenta usa</strong> y <strong>si está habilitada</strong>, con Supabase Auth y la base de datos. <strong>Entrega</strong> el contexto de acceso a los demás módulos (<a href="README.html#contrato-central-el-contexto-de-acceso">contrato</a>).</p>
+<p>Las decisiones y la auditoría que dieron forma a este flujo están en el ADR-0005 (2026-11-12). Se construye con el prompt de la base de verificación.</p>
 <p><strong>Reglas que no se negocian</strong></p>
 <ul>
-<li>No hay registro abierto: se entra solo por invitación.</li>
-<li>El rol y la organización nunca salen de datos que escribe la propia persona; los asigna un administrador.</li>
-<li>Fail-closed: si algo no se puede comprobar, la persona queda sin acceso.</li>
-<li>Los mensajes de error no revelan si un correo existe.</li>
-<li>Las claves nunca pasan por el chat, el código ni Git.</li>
+<li><strong>Sin registro abierto:</strong> se entra solo por invitación, y la invitación ya trae la organización, el rol y las áreas.</li>
+<li><strong>El rol y la organización nunca salen de datos que escribe la propia persona.</strong> Se leen de la base en cada consulta y nunca desde el token de sesión.</li>
+<li><strong>Fail-closed:</strong> si algo no se puede comprobar, la persona queda sin acceso. Un error de red no es una denegación: se reintenta.</li>
+<li><strong>Verificación en dos pasos obligatoria para Administradores, exigida por la base de datos.</strong> Sin ella, un Administrador no tiene ningún permiso.</li>
+<li><strong>Los mensajes no revelan si un correo existe</strong>, tampoco cuando Supabase responde «demasiados intentos».</li>
+<li><strong>Los enlaces de los correos no se gastan al abrirse.</strong> Se canjean al pulsar «Continuar» en A9, así los antivirus de correo no los consumen.</li>
+<li><strong>Las claves nunca pasan por el chat, el código ni Git.</strong></li>
 </ul>
-<p><strong>Pantallas:</strong> A1 Ingreso · A2 Verificación en dos pasos · A3 Comprobando acceso · A4 Sin acceso · A5 Recuperar clave · A6 Definir clave nueva · A7 Aceptar invitación · A8 Cerrar sesión.</p>
+<p><strong>Pantallas:</strong></p>
+<ul>
+<li>A1 Ingreso</li>
+<li>A2 Verificación en dos pasos</li>
+<li>A2b Activar verificación</li>
+<li>A3 Comprobando acceso</li>
+<li>A4 Sin acceso</li>
+<li>A5 Recuperar clave</li>
+<li>A6 Definir clave nueva</li>
+<li>A7 Aceptar invitación</li>
+<li>A8 Cerrar sesión</li>
+<li>A9 Confirmar enlace</li>
+</ul>
 <p>Leyenda de los flujos: verde = inicio o fin, amarillo = paso, celeste = decisión, rojo = sin acceso o error.</p>
 <h2>A1. Ingreso</h2>
 <p>Correo y clave. Supabase Auth valida las credenciales (<code>signInWithPassword</code>).</p>
@@ -43,13 +58,12 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
     i1([Abre DentiHub]):::ini
     i2{¿Ya hay una sesión válida?}:::dec
     i3[Escribe correo y clave&lt;br/&gt;y pulsa Ingresar]:::paso
-    i4{¿Los campos están completos&lt;br/&gt;y el correo tiene formato válido?}:::dec
+    i4{¿Campos completos y&lt;br/&gt;correo con formato válido?}:::dec
     i5[Supabase Auth valida&lt;br/&gt;las credenciales]:::paso
-    i6{¿Credenciales correctas?}:::dec
-    i7{¿La cuenta tiene verificación&lt;br/&gt;en dos pasos?}:::dec
+    i6{¿Respuesta?}:::dec
     e1[Marca el campo con error&lt;br/&gt;sin llamar al servidor]:::no
-    e2[Mensaje: correo o clave incorrectos.&lt;br/&gt;No dice cuál de los dos.&lt;br/&gt;Tras varios intentos, espera]:::no
-    a2([A2 Verificación en dos pasos]):::ini
+    e2[Mensaje fijo: correo o clave incorrectos.&lt;br/&gt;Tras varios intentos, espera]:::no
+    e3[Sin conexión: mensaje claro&lt;br/&gt;y botón Reintentar]:::no
     a3([A3 Comprobando acceso]):::ini
     a5([A5 Recuperar clave]):::ini
 
@@ -58,33 +72,62 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
     i2 -- No --&gt; i3 --&gt; i4
     i4 -- No --&gt; e1 --&gt; i3
     i4 -- Sí --&gt; i5 --&gt; i6
-    i6 -- No --&gt; e2 --&gt; i3
+    i6 -- Credenciales malas o&lt;br/&gt;demasiados intentos --&gt; e2 --&gt; i3
+    i6 -- Error de red --&gt; e3 --&gt; i3
     e2 -. Olvidé mi clave .-&gt; a5
-    i6 -- Sí --&gt; i7
-    i7 -- Sí --&gt; a2
-    i7 -- No --&gt; a3</pre></div>
+    i6 -- Correctas --&gt; a3</pre></div>
+<p>A1 no decide nada sobre la verificación en dos pasos. Eso lo decide <strong>A3</strong>, con lo que responde la base, para que no exista un camino que la salte.</p>
 <h2>A2. Verificación en dos pasos</h2>
-<p>Código de 6 dígitos de una app autenticadora (Supabase MFA). En la demo es simulada. <strong>Por decidir:</strong> obligatoria para Administradores (recomendado) u opcional para todos.</p>
+<p>Código de 6 dígitos de una app autenticadora (Supabase MFA, factor TOTP). Sube la sesión al nivel <code>aal2</code>. Se llega desde A3 cuando la base responde <code>requiere_dos_pasos</code> y la persona <strong>ya tiene</strong> un factor activo.</p>
 <div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
     classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
     classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
     classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
-    v1([Llega desde A1]):::ini
+    v1([Llega desde A3]):::ini
     v2[Escribe el código de 6 dígitos]:::paso
-    v3{¿El código es correcto&lt;br/&gt;y vigente?}:::dec
-    v4[La sesión sube a nivel verificado]:::paso
+    v3{¿Código correcto y vigente?}:::dec
+    v4[La sesión sube a nivel aal2]:::paso
     e1[Mensaje: código incorrecto.&lt;br/&gt;Tras varios intentos, espera]:::no
+    e2[¿Perdiste el teléfono?&lt;br/&gt;Pide a otro Administrador o al&lt;br/&gt;propietario que reinicie tu verificación]:::no
     a3([A3 Comprobando acceso]):::ini
     a8([A8 Cerrar sesión]):::ini
 
     v1 --&gt; v2 --&gt; v3
     v3 -- No --&gt; e1 --&gt; v2
     v3 -- Sí --&gt; v4 --&gt; a3
+    v2 -. Perdí el teléfono .-&gt; e2 --&gt; a8
     v2 -. Cancelar .-&gt; a8</pre></div>
+<h2>A2b. Activar verificación</h2>
+<p>Primer ingreso de un Administrador, o después de que se reinició su verificación. Se llega desde A3 con <code>requiere_dos_pasos</code> y <strong>sin</strong> un factor activo.</p>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    b1([Llega desde A3]):::ini
+    b2[Explica por qué se pide&lt;br/&gt;y qué app instalar]:::paso
+    b3[Supabase crea el factor&lt;br/&gt;y muestra el código QR]:::paso
+    b4[Escanea el QR con la app&lt;br/&gt;y escribe el primer código]:::paso
+    b5{¿Código correcto?}:::dec
+    b6[Factor verificado.&lt;br/&gt;La sesión sube a aal2]:::paso
+    e1[Código incorrecto: revisa&lt;br/&gt;la hora del teléfono e intenta de nuevo]:::no
+    a3([A3 Comprobando acceso]):::ini
+    a8([A8 Cerrar sesión]):::ini
+
+    b1 --&gt; b2 --&gt; b3 --&gt; b4 --&gt; b5
+    b5 -- No --&gt; e1 --&gt; b4
+    b5 -- Sí --&gt; b6 --&gt; a3
+    b2 -. Ahora no .-&gt; a8</pre></div>
+<p>Si se abandona a medias, el factor queda sin verificar y se reemplaza en el siguiente intento. No quedan factores huérfanos.</p>
 <h2>A3. Comprobando acceso</h2>
-<p>Pantalla de carga breve. Llama a <code>mi_acceso()</code> y decide adónde va la persona. Es el <strong>único</strong> lugar donde se arma el contexto de acceso.</p>
+<p>Pantalla de carga breve y el <strong>único</strong> lugar donde se arma el contexto de acceso. Hace dos llamadas:</p>
+<ol>
+<li><code>vincular_invitacion()</code>: aplica la invitación pendiente, si existe. Es idempotente.</li>
+<li><code>mi_acceso()</code>: lee el contrato.</li>
+</ol>
 <div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
     classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
@@ -92,30 +135,35 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
     classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
     c1([Sesión iniciada]):::ini
-    c2[Llama a mi_acceso]:::paso
-    c3{¿Respondió?}:::dec
-    c4{¿Cuenta activa?}:::dec
-    c5{¿Tiene organización?}:::dec
-    c6{¿Tiene rol válido?}:::dec
-    c7[Guarda el contexto de acceso:&lt;br/&gt;persona, organización, rol y áreas]:::paso
+    c2[vincular_invitacion:&lt;br/&gt;si hay invitación pendiente para&lt;br/&gt;su correo confirmado, asigna&lt;br/&gt;organización, rol y áreas]:::paso
+    c3[mi_acceso]:::paso
+    c4{¿Respondió?}:::dec
+    c5{¿Motivo?}:::dec
+    c6{¿Tiene factor activo?}:::dec
+    c7[Guarda el contexto:&lt;br/&gt;persona, organización, rol y áreas]:::paso
     c8([Entra a Inicio con el menú de su rol]):::ini
-    e1[Sin conexión o error:&lt;br/&gt;Reintentar. No entra&lt;br/&gt;con datos viejos]:::no
-    s1([A4 Sin acceso: desactivada]):::no
-    s2([A4 Sin acceso: sin organización]):::no
-    s3([A4 Sin acceso: sin rol]):::no
+    e1[Error de red o del servidor:&lt;br/&gt;reintenta solo 3 veces con espera&lt;br/&gt;creciente; luego botón Reintentar.&lt;br/&gt;No entra con datos viejos]:::no
+    a2([A2 Verificación en dos pasos]):::ini
+    a2b([A2b Activar verificación]):::ini
+    a4([A4 Sin acceso, con su motivo]):::no
 
-    c1 --&gt; c2 --&gt; c3
-    c3 -- No --&gt; e1 --&gt; c2
-    c3 -- Sí --&gt; c4
-    c4 -- No --&gt; s1
+    c1 --&gt; c2 --&gt; c3 --&gt; c4
+    c4 -- No --&gt; e1 --&gt; c2
     c4 -- Sí --&gt; c5
-    c5 -- No --&gt; s2
-    c5 -- Sí --&gt; c6
-    c6 -- No --&gt; s3
-    c6 -- Sí --&gt; c7 --&gt; c8</pre></div>
-<p><strong>Mientras la persona usa la app:</strong> el contexto se vuelve a pedir al volver a la pestaña y cada pocos minutos. Si el Administrador la desactiva, en la siguiente comprobación pasa a A4; aunque la interfaz tarde, la base de datos ya le niega los datos (RLS).</p>
+    c5 -- habilitada --&gt; c7 --&gt; c8
+    c5 -- requiere_dos_pasos --&gt; c6
+    c6 -- Sí --&gt; a2
+    c6 -- No --&gt; a2b
+    c5 -- correo_sin_confirmar,&lt;br/&gt;desactivada, sin_organizacion&lt;br/&gt;o sin_rol --&gt; a4</pre></div>
+<p><strong>Mientras la persona usa la app:</strong> el contexto se vuelve a pedir al volver a la pestaña, cada 5 minutos y ante cada evento de sesión de Supabase (renovación, cierre en otra pestaña). Si el Administrador la desactiva:</p>
+<ul>
+<li>la base deja de entregarle datos <strong>en la siguiente consulta</strong> (RLS);</li>
+<li>Auth bloquea la renovación de la sesión;</li>
+<li>la app la lleva a A4 en la siguiente comprobación.</li>
+</ul>
+<p>Si la organización tiene configurado un <strong>cierre por inactividad</strong> (<code>idle_timeout_minutes</code>), pasado ese tiempo sin uso se va a A8.</p>
 <h2>A4. Sin acceso</h2>
-<p>Tres variantes con el mismo diseño: título, explicación corta, qué hacer y botón <strong>Cerrar sesión</strong>.</p>
+<p>Cuatro variantes con el mismo diseño: título, explicación corta, qué hacer y botón <strong>Cerrar sesión</strong>.</p>
 <div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
     classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
@@ -124,22 +172,24 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
 
     s0([Llega desde A3]):::ini
     s1{¿Cuál es el motivo?}:::dec
+    d0[Confirma tu correo con el&lt;br/&gt;enlace que te enviamos]:::paso
     d1[Tu cuenta está desactivada.&lt;br/&gt;Habla con el Administrador]:::no
-    d2[Tu cuenta está creada.&lt;br/&gt;Falta que el Administrador&lt;br/&gt;te asigne a tu organización]:::paso
+    d2[Tu cuenta existe, pero no tiene&lt;br/&gt;una invitación vigente.&lt;br/&gt;Pide al Administrador que te invite]:::paso
     d3[Tu cuenta no tiene un rol asignado.&lt;br/&gt;Habla con el Administrador]:::no
     r1[Pulsa Volver a comprobar]:::paso
     a3([A3 Comprobando acceso]):::ini
     a8([A8 Cerrar sesión]):::ini
 
     s0 --&gt; s1
-    s1 -- desactivada --&gt; d1
-    s1 -- sin organización --&gt; d2
-    s1 -- sin rol --&gt; d3
-    d2 --&gt; r1 --&gt; a3
-    d3 --&gt; r1
-    d1 --&gt; a8
+    s1 -- correo_sin_confirmar --&gt; d0 --&gt; r1
+    s1 -- desactivada --&gt; d1 --&gt; a8
+    s1 -- sin_organizacion --&gt; d2 --&gt; r1
+    s1 -- sin_rol --&gt; d3 --&gt; r1
+    r1 --&gt; a3
+    d0 -.-&gt; a8
     d2 -.-&gt; a8
     d3 -.-&gt; a8</pre></div>
+<p>Con las invitaciones, «sin organización» deja de ser el camino normal. Solo aparece si se creó una cuenta por fuera de una invitación, o si la invitación se revocó antes de usarse.</p>
 <h2>A5. Recuperar clave</h2>
 <div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
@@ -150,87 +200,152 @@ a{color:var(--link)}code{font-size:13px}strong{color:var(--fg)}
     r1([Pulsa Olvidé mi clave]):::ini
     r2[Escribe su correo y pulsa Enviar]:::paso
     r3{¿Formato de correo válido?}:::dec
-    r4[Supabase envía el enlace&lt;br/&gt;si la cuenta existe]:::paso
-    r5[Mensaje siempre igual:&lt;br/&gt;si el correo está registrado,&lt;br/&gt;te llegará un enlace]:::paso
-    r6([La persona abre el correo&lt;br/&gt;y pulsa el enlace]):::ini
-    a6([A6 Definir clave nueva]):::ini
+    r4[Supabase envía el enlace&lt;br/&gt;si la cuenta existe y está activa]:::paso
+    r5[Mensaje siempre igual, aunque&lt;br/&gt;falle o haya demasiados intentos:&lt;br/&gt;si el correo está registrado,&lt;br/&gt;te llegará un enlace en unos minutos]:::paso
+    r6([Abre el correo y pulsa el enlace]):::ini
+    a9([A9 Confirmar enlace]):::ini
     e1[Marca el campo con error]:::no
 
     r1 --&gt; r2 --&gt; r3
     r3 -- No --&gt; e1 --&gt; r2
-    r3 -- Sí --&gt; r4 --&gt; r5 --&gt; r6 --&gt; a6</pre></div>
+    r3 -- Sí --&gt; r4 --&gt; r5 --&gt; r6 --&gt; a9</pre></div>
+<p>Una cuenta bloqueada en Auth no recibe el enlace, y la pantalla muestra el mismo mensaje fijo.</p>
 <h2>A6. Definir clave nueva</h2>
-<p>Se llega desde el enlace de recuperación (A5) o de invitación (A7).</p>
+<p>Se llega desde A9, con un enlace de recuperación (A5) o de invitación (A7) ya canjeado.</p>
 <div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
     classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
     classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
     classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
-    n1([Abre el enlace del correo]):::ini
-    n2{¿El enlace es válido&lt;br/&gt;y no ha vencido?}:::dec
+    n1([Llega desde A9 con la sesión&lt;br/&gt;del enlace ya canjeado]):::ini
     n3[Escribe la clave nueva dos veces]:::paso
-    n4{¿Cumple la política de claves&lt;br/&gt;y ambas coinciden?}:::dec
+    n4{¿Tiene al menos 10 caracteres&lt;br/&gt;y ambas coinciden?}:::dec
     n5[Supabase guarda la clave]:::paso
+    n6{¿Supabase la acepta?}:::dec
     a3([A3 Comprobando acceso]):::ini
-    e1[El enlace venció o ya se usó.&lt;br/&gt;Pide uno nuevo]:::no
     e2[Indica qué falta: largo mínimo,&lt;br/&gt;o que no coinciden]:::no
-    a5([A5 Recuperar clave]):::ini
+    e3[Clave rechazada por débil o filtrada:&lt;br/&gt;elige otra]:::no
 
-    n1 --&gt; n2
-    n2 -- No --&gt; e1 --&gt; a5
-    n2 -- Sí --&gt; n3 --&gt; n4
+    n1 --&gt; n3 --&gt; n4
     n4 -- No --&gt; e2 --&gt; n3
-    n4 -- Sí --&gt; n5 --&gt; a3</pre></div>
+    n4 -- Sí --&gt; n5 --&gt; n6
+    n6 -- No --&gt; e3 --&gt; n3
+    n6 -- Sí --&gt; a3</pre></div>
 <h2>A7. Aceptar invitación</h2>
-<p>La invitación la envía el Administrador desde el módulo Administración, mediante una <strong>función de servidor</strong> (la clave de servicio nunca va en el navegador).</p>
+<p>El Administrador invita desde Administración con <strong>correo, rol y áreas</strong>. Una <strong>función de servidor</strong> registra la invitación en la base y pide a Supabase que envíe el correo. La clave de servicio nunca va en el navegador.</p>
 <div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
     classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
     classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
     classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
-    v1([El Administrador invita por correo]):::ini
-    v2[Supabase envía el correo&lt;br/&gt;con el enlace]:::paso
-    v3{¿La persona abre el enlace&lt;br/&gt;antes de que venza?}:::dec
-    v4[Se crea el perfil, sin rol&lt;br/&gt;ni organización]:::paso
+    v1([El Administrador, con sesión aal2,&lt;br/&gt;invita: correo, rol y áreas]):::ini
+    v2[Función de servidor: crea la invitación&lt;br/&gt;pendiente y pide a Supabase&lt;br/&gt;el correo de invitación]:::paso
+    v3{¿Se envió el correo?}:::dec
+    v4[La persona abre el correo&lt;br/&gt;y pulsa el enlace]:::paso
+    a9([A9 Confirmar enlace]):::ini
     a6([A6 Definir clave nueva]):::ini
-    e1[El enlace venció:&lt;br/&gt;el Administrador la reenvía]:::no
+    a3([A3: vincular_invitacion asigna&lt;br/&gt;organización, rol y áreas]):::ini
+    e1[La invitación queda pendiente de envío;&lt;br/&gt;el Administrador ve el error y pulsa Reenviar]:::no
+    e2[Venció o fue revocada:&lt;br/&gt;el Administrador la reenvía]:::no
 
     v1 --&gt; v2 --&gt; v3
-    v3 -- No --&gt; e1 --&gt; v2
-    v3 -- Sí --&gt; v4 --&gt; a6</pre></div>
-<p>Después de A6 la persona pasa por A3. Si el Administrador todavía no le asignó organización y rol, ve A4 «sin organización» hasta que lo haga.</p>
+    v3 -- No --&gt; e1
+    v3 -- Sí --&gt; v4 --&gt; a9
+    a9 -- Enlace vigente --&gt; a6 --&gt; a3
+    a9 -- Vencido o revocado --&gt; e2</pre></div>
+<p>Reglas de la invitación:</p>
+<ul>
+<li><strong>Vigencia:</strong> 7 días.</li>
+<li><strong>Una pendiente por correo</strong> en la organización.</li>
+<li><strong>El Administrador puede</strong> reenviarla y revocarla.</li>
+<li><strong>La vinculación exige el correo confirmado</strong>, que se confirma al canjear el enlace.</li>
+<li><strong>Una invitación revocada no vincula</strong>, aunque la cuenta ya exista en Auth.</li>
+</ul>
 <h2>A8. Cerrar sesión</h2>
-<div class="card"><pre class="mermaid">flowchart LR
+<div class="card"><pre class="mermaid">flowchart TD
     classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
     classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
 
-    o1([Pulsa Cerrar sesión]):::ini
-    o2[Supabase cierra la sesión]:::paso
-    o3[La app borra el contexto de acceso&lt;br/&gt;y todos los datos en caché]:::paso
-    o4([A1 Ingreso]):::ini
+    o1([Pulsa Cerrar sesión, vence la&lt;br/&gt;inactividad o la cuenta se desactivó]):::ini
+    o2{¿Hay fotos sin subir?}:::dec
+    o3[Aviso: se perderán N fotos.&lt;br/&gt;Subir ahora o Cerrar igual]:::no
+    o4[Supabase cierra la sesión]:::paso
+    o5[La app borra el contexto, la caché,&lt;br/&gt;su almacenamiento local y la cola de fotos]:::paso
+    o6([A1 Ingreso]):::ini
 
-    o1 --&gt; o2 --&gt; o3 --&gt; o4</pre></div>
+    o1 --&gt; o2
+    o2 -- Sí, y fue la persona --&gt; o3
+    o3 -- Cerrar igual --&gt; o4
+    o2 -- No, o fue automático --&gt; o4 --&gt; o5 --&gt; o6</pre></div>
+<p>En un cierre automático (por inactividad o por desactivación) no hay a quién preguntar. Las fotos pendientes se descartan, y eso queda registrado.</p>
+<h2>A9. Confirmar enlace</h2>
+<p>Página intermedia para <strong>todos</strong> los enlaces de correo (invitación y recuperación). El enlace trae un <code>token_hash</code> que <strong>no se canjea al abrir la página</strong>: se canjea al pulsar el botón. Así, los antivirus y vistas previas de correo que abren enlaces no lo gastan.</p>
+<div class="card"><pre class="mermaid">flowchart TD
+    classDef ini fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef paso fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef dec fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef no fill:#FFC6C6,stroke:#BD0A0A,color:#7A0606
+
+    k1([Abre el enlace del correo]):::ini
+    k2{¿El enlace trae token_hash&lt;br/&gt;y un tipo permitido?}:::dec
+    k3[Muestra: Continuar para&lt;br/&gt;activar tu cuenta / cambiar tu clave]:::paso
+    k4[Pulsa Continuar:&lt;br/&gt;verifyOtp con token_hash]:::paso
+    k5{¿Vigente y sin usar?}:::dec
+    a6([A6 Definir clave nueva]):::ini
+    e1[Enlace incompleto o alterado]:::no
+    e2[El enlace venció o ya se usó.&lt;br/&gt;Pide uno nuevo]:::no
+    a5([A5 Recuperar clave]):::ini
+
+    k1 --&gt; k2
+    k2 -- No --&gt; e1 --&gt; a5
+    k2 -- Sí --&gt; k3 --&gt; k4 --&gt; k5
+    k5 -- No --&gt; e2 --&gt; a5
+    k5 -- Sí --&gt; a6</pre></div>
+<p>Los tipos permitidos son <code>invite</code> y <code>recovery</code>. Cualquier otro valor se trata como enlace alterado.</p>
 <h2>Datos y funciones que usa</h2>
 <ul>
-<li><strong>Supabase Auth:</strong> ingreso con clave, verificación en dos pasos, recuperar y cambiar clave, invitación (desde una función de servidor).</li>
-<li><strong>Base de datos:</strong> <code>profiles</code> (<code>active</code>, <code>org_id</code>), <code>user_roles</code> (un rol por persona), <code>user_areas</code>. Migraciones de la Etapa 1, escritas y <strong>sin aplicar</strong>.</li>
-<li><strong>Por preparar:</strong> la función <code>mi_acceso()</code> del contrato, la función de servidor que invita, y la configuración de Supabase: registro público desactivado, política de claves, URLs de redirección y plantillas de correo en español.</li>
+<li><strong>Supabase Auth:</strong></li>
 </ul>
+<p>  - ingreso con clave;</p>
+<p>  - MFA con factor TOTP (inscribir, desafiar y verificar);</p>
+<p>  - recuperar y cambiar clave;</p>
+<p>  - invitación y bloqueo (<code>ban_duration</code>), ambos solo desde funciones de servidor.</p>
+<ul>
+<li><strong>Base de datos (migraciones de la Etapa 1, escritas y sin aplicar):</strong></li>
+</ul>
+<p>  - <code>profiles</code> (<code>active</code>, <code>org_id</code>);</p>
+<p>  - <code>user_roles</code> (un rol por persona);</p>
+<p>  - <code>user_areas</code>;</p>
+<p>  - <code>auth_org()</code> y <code>auth_role()</code>.</p>
+<ul>
+<li><strong>Por preparar (ADR-0005):</strong></li>
+</ul>
+<p>  - Tabla <code>invitations</code> y su política RLS.</p>
+<p>  - Funciones <code>admin_create_invitation</code>, <code>admin_revoke_invitation</code>, <code>vincular_invitacion()</code> y <code>mi_acceso()</code>.</p>
+<p>  - <code>auth_role()</code> con la exigencia de <code>aal2</code> para Administradores.</p>
+<p>  - Columna <code>organizations.idle_timeout_minutes</code>.</p>
+<p>  - Funciones de servidor <code>invitar</code> y <code>bloquear-cuenta</code>.</p>
+<p>  - Configuración de Auth: SMTP, plantillas en español con <code>{{ .TokenHash }}</code>, URLs exactas, sin registro público ni ingreso anónimo, y la persona no cambia su propio correo.</p>
 <h2>Terminado cuando</h2>
 <ol>
-<li>Una persona invitada define su clave, entra y ve el menú de su rol.</li>
-<li>Una cuenta desactivada, sin organización o sin rol ve la variante correcta de A4 y no lee ningún dato, <strong>ni llamando a la API directamente</strong>.</li>
-<li>Recuperar clave nunca revela si un correo existe.</li>
-<li>Cerrar sesión borra la caché: otra persona en el mismo teléfono no ve nada del anterior.</li>
-<li>Con verificación en dos pasos activa, no se entra sin el código.</li>
+<li>Una persona invitada pulsa el enlace (aunque un antivirus lo haya abierto antes), define su clave, entra y ve el menú de su rol sin que nadie le asigne nada a mano.</li>
+<li>Una cuenta desactivada, sin organización, sin rol o con el correo sin confirmar ve la variante correcta de A4 y no lee ningún dato, <strong>ni llamando a la API directamente</strong>.</li>
+<li>Un Administrador con solo la clave (sesión <code>aal1</code>) no puede leer ni escribir nada de administración ni de operación, <strong>ni por la API</strong>.</li>
+<li>Recuperar la clave nunca revela si un correo existe, tampoco ante el límite de intentos.</li>
+<li>Desactivar una cuenta corta los datos en la siguiente consulta e impide renovar la sesión. Reactivarla devuelve el acceso.</li>
+<li>Cerrar sesión borra la caché y el almacenamiento local: otra persona en el mismo teléfono no ve nada de la anterior. Si había fotos sin subir, se avisó antes.</li>
+<li>Un error de red en A3 nunca saca a la persona a A4 ni la deja entrar con un contexto viejo.</li>
+<li>Existen y se probaron los procedimientos de arranque (primera organización y primer Administrador) y de recuperación de un Administrador que perdió su teléfono.</li>
 </ol>
 <h2>Decisiones abiertas</h2>
 <ul>
-<li>Verificación en dos pasos: ¿obligatoria para Administradores?</li>
-<li>Política de claves (largo mínimo; Supabase Pro agrega bloqueo de claves filtradas).</li>
-<li>Cada cuánto se vuelve a comprobar el acceso mientras la app está abierta.</li>
+<li><strong>Plan de Supabase:</strong> Pro agrega bloqueo de claves filtradas y límite de sesiones por inactividad en el servidor.</li>
+<li><strong>Proveedor de envío de correo</strong> (Resend o SendGrid) y quién configura el DNS en la empresa cliente.</li>
+<li><strong>Ingreso por teléfono:</strong> solo si se suma personal sin correo. Hoy no se construye.</li>
 </ul>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>

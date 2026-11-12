@@ -58,7 +58,7 @@ Regla de código de la demo: «gestión» = todo rol distinto de Técnico; «Adm
 
 1. **Completar una tarea.** Exige todos los pasos del checklist marcados **y** la foto de evidencia. Sin foto, no se puede cerrar y se explica por qué. Al completarla se registra en la auditoría y se notifica. Sin conexión, la foto queda «pendiente de sincronizar» y se sube sola al volver la señal.
 2. **Aprobación.** Cualquier persona crea una solicitud (estado Pendiente) → un Gestor o Administrador la aprueba o la rechaza → se notifica a quien la pidió y queda en la auditoría.
-3. **Alta de personas.** El Administrador invita por correo con rol y área (estado Invitado). Puede activar o desactivar cuentas y cambiar roles; todo queda auditado. No hay registro abierto.
+3. **Alta de personas.** El Administrador invita por correo con rol y área (estado Invitado). La invitación vence en 7 días, se puede reenviar y revocar, y al primer ingreso con el correo confirmado asigna organización, rol y áreas sola (ADR-0005). Puede activar o desactivar cuentas (desactivar también bloquea la sesión en Auth) y cambiar roles; todo queda auditado. No hay registro abierto. La verificación en dos pasos es obligatoria para Administradores y la exige la base de datos.
 4. **Alertas automáticas.** Reglas que se activan y desactivan: máquina marcada defectuosa → avisar al canal de urgencias; tarea cerrada sin foto → avisar al Gestor; aprobación pendiente 2 días → recordar al Administrador.
 5. **Auditoría.** Toda escritura (crear, editar, eliminar, aprobar, invitar) queda con usuario, acción, módulo y hora. El registro es de solo lectura.
 6. **Modo sin conexión.** Indicador visible; lo que se sube sin señal se guarda en el teléfono y se sincroniza al volver.
@@ -72,7 +72,7 @@ Qué tablas existen y cuáles se planean (nombres provisorios):
 |---|---|
 | **Existen** en Supabase | `profiles`, `user_roles`, `audit_log` |
 | **Etapa 1: migraciones escritas, sin aplicar** (en revisión; nombres provisorios hasta cerrar la revisión) | `organizations`, `areas`, `user_areas`, `form_templates`, `task_definitions`, `tasks`, `task_evidence`; bucket privado `evidence`; funciones `admin_assign_member`, `admin_set_active`, `admin_list_unassigned_accounts`, `create_form_template`, `save_task_progress`, `complete_task`, `cancel_task`, `register_evidence`, `generate_recurring_tasks` |
-| **Etapa 1: por diseñar** | `notifications`, `alert_rules`, `alerts`, `role_page_permissions` |
+| **Etapa 1: por diseñar** | `notifications`, `alert_rules`, `alerts`, `role_page_permissions`; y para Acceso ([ADR-0005](adr/0005-base-de-verificacion-acceso.md), [prompt](prompts/01-base-de-verificacion.md)): `invitations`, `organizations.idle_timeout_minutes`, funciones `mi_acceso`, `vincular_invitacion`, `admin_create_invitation`, `admin_revoke_invitation` y `auth_role` con `aal2` para Administradores |
 | **Etapa 2** (planeadas) | `folders`, `files`, tablas de planillas, `approval_requests`, `channels`, `channel_members`, `messages`, `documents`, `wiki_pages` |
 
 **Reglas de datos de la Etapa 1:** el rol de una persona vive en `user_roles` (una fila por persona), nunca en `profiles`; la organización y el rol los asigna un administrador con una función transaccional, jamás salen de datos que controla quien se registra; una persona sin organización o con la cuenta desactivada no tiene acceso; completar una tarea exige pasos y foto **en la base de datos**; el registro de auditoría es de solo inserción.

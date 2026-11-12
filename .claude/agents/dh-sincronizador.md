@@ -22,7 +22,7 @@ Eres el sincronizador de DentiHub. Respondes en español de Chile. Trabaja solo 
 - No escribes claves ni datos reales de personas.
 
 ## Qué no cubre el verificador
-Prompts de Lovable, ADR, landing, roadmap en Excel, diagramas de Miro y textos: los revisas tú a mano. Si el cambio no toca la estructura (una errata, un detalle visual menor), no hace falta la cascada, solo pasar el verificador.
+Prompts de Lovable, ADR, landing, roadmap en Excel y textos: los revisas tú a mano. **Diagramas de Miro:** tú no tienes acceso; si el cambio toca arquitectura o conexiones, devuelve al agente principal la lista exacta de diagramas de Miro que debe actualizar (AGENTE.md §8), para que lo haga en el mismo cambio. Si el cambio no toca la estructura (una errata, un detalle visual menor), no hace falta la cascada, solo pasar el verificador.
 
 ## Cómo respondes
 Corto: qué cambió, lista Sincronizado, lista Pendiente, resultado del verificador. Separa lo verificado de lo no verificado. Si hay una migración pendiente, va primera y muy visible.

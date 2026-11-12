@@ -34,7 +34,7 @@ flowchart LR
 
 ## Módulos
 
-- **1. Acceso** · [01-acceso.md](01-acceso.md) · Ingreso, verificación en dos pasos, recuperar clave, aceptar invitación y pantallas de «sin acceso». **Entrega** el contexto de acceso.
+- **1. Acceso** · [01-acceso.md](01-acceso.md) · Ingreso, verificación en dos pasos (obligatoria para Administradores) y su activación, recuperar clave, aceptar invitación, confirmar enlace y pantallas de «sin acceso». **Entrega** el contexto de acceso.
 - **2. Administración** · documento pendiente · Asignar rol, organización y áreas; listar cuentas sin asignar; activar y desactivar; ver auditoría. **Consume** el contexto de acceso (solo Administrador).
 - **3. Operación** · [03-operacion.md](03-operacion.md) · Mis tareas, detalle, checklist, foto de evidencia y cierre; para Gestor, crear y asignar tareas y plantillas. **Consume** el contexto de acceso y las personas habilitadas.
 - **4. Reportes y alertas** · documento pendiente · Cumplimiento por persona, área y periodo; alertas simples. **Consume** tareas y evidencia.
@@ -44,8 +44,8 @@ flowchart LR
 
 Lo entrega **Acceso** después de certificar a la persona. Ningún otro módulo vuelve a decidir quién es ni qué rol tiene.
 
-- **Datos:** `user_id`, `nombre`, `org_id`, `rol` (`admin`, `gestor` o `tecnico`), `areas`, `habilitada` (cuenta activa, con organización y con rol) y `motivo` cuando no lo está (`desactivada`, `sin_organizacion` o `sin_rol`).
-- **Cómo se obtiene:** una función de base de datos `mi_acceso()` que lee perfil, rol y áreas de quien llama (**por preparar**: hoy existen `auth_org()` y `auth_role()` en las migraciones de la Etapa 1, sin aplicar).
+- **Datos:** `user_id`, `nombre`, `org_id`, `rol` (`admin`, `gestor` o `tecnico`), `areas`, `habilitada` (correo confirmado, cuenta activa, con organización, con rol y, si es Administrador, con sesión de dos pasos), `motivo` cuando no lo está (`correo_sin_confirmar`, `desactivada`, `sin_organizacion`, `sin_rol` o `requiere_dos_pasos`, en ese orden), `mfa_requerida` y `aal` (ADR-0005).
+- **Cómo se obtiene:** una función de base de datos `mi_acceso()` que lee perfil, rol y áreas de quien llama, precedida por `vincular_invitacion()` (**por preparar** con el [prompt de la base de verificación](../prompts/01-base-de-verificacion.md); hoy existen `auth_org()` y `auth_role()` en las migraciones de la Etapa 1, sin aplicar).
 - **En la app:** un hook `useAcceso()` (TanStack Query, llave estable `["acceso"]`) que se invalida al iniciar o cerrar sesión.
 - **Regla:** si `habilitada` es falso, la app solo muestra las pantallas de «sin acceso» del módulo Acceso. La seguridad real sigue en RLS: este contrato ordena la interfaz, no protege los datos.
 
